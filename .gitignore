@@ -1,0 +1,75 @@
+# Node & Frontend dependencies
+node_modules/
+frontend/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Python & Virtual Environments
+__pycache__/
+*/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.coverage
+htmlcov/
+venv/
+.venv/
+env/
+
+# Environment Variables & Secrets
+.env
+.env.local
+*.local
+backend/.env
+frontend/.env
+
+# Databases & SQLite
+*.db
+*.sqlite
+*.sqlite3
+rosteriq.db
+backend/rosteriq.db
+
+# Build artifacts
+frontend/dist/
+frontend/dist-ssr/
+
+# IDE & OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# Unrelated standalone projects in workspace
+google_marketing_analysis/
+InsightAI/
+
+# Playwright & Test Artifacts
+.playwright_browsers/
+playwright-report/
+test-results/
+frontend/test-results/
+frontend/playwright-report/
+esp32_petrol_tank_monitor/
+legacy_placell_backend/
+legacy_placell_frontend/
+
+# Standalone local documents & workspace assets
+datastraw/
+datastraw.zip
+FINAL_YEAR_BLACKBOOK_ALIGNED.*
+*.docx
+*.pdf
+aligned_report_builder.py
+build_aligned_blackbook.py
+build_aligned_docx.py
+extracted_assets/
+extracted_docx_text.txt
+extracted_full_pdf_text.txt
+uploads/
+pdf_page_previews/

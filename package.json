@@ -1,0 +1,26 @@
+{
+  "name": "rosteriq",
+  "version": "1.0.0",
+  "private": true,
+  "description": "RosterIQ: Intelligent Workforce Planning & Roster Optimization System for DataStraw Assessment",
+  "scripts": {
+    "dev:frontend": "npm --prefix frontend run dev",
+    "build:frontend": "npm --prefix frontend run build",
+    "test:frontend": "npm --prefix frontend test",
+    "test:e2e": "npm --prefix frontend run test:e2e",
+    "test:backend": "cd backend && python -m pytest tests/ -v",
+    "seed": "cd backend && python seed.py"
+  },
+  "keywords": [
+    "workforce-management",
+    "roster-optimization",
+    "google-or-tools",
+    "fastapi",
+    "react",
+    "vite",
+    "postgresql",
+    "datastraw"
+  ],
+  "author": "Vedang Pewekar",
+  "license": "MIT"
+}
