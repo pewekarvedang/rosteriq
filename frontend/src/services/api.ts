@@ -1,5 +1,7 @@
 import axios from 'axios';
 
+const PRODUCTION_API_URL = 'https://rosteriq-backend-9aje.onrender.com/api/v1';
+
 export const getApiBaseUrl = (): string => {
   const customUrl = localStorage.getItem('rosteriq_backend_url');
   if (customUrl && customUrl.trim()) {
@@ -9,7 +11,7 @@ export const getApiBaseUrl = (): string => {
     }
     return clean;
   }
-  return import.meta.env.VITE_API_BASE_URL || '/api/v1';
+  return import.meta.env.VITE_API_BASE_URL || PRODUCTION_API_URL;
 };
 
 export const setCustomBackendUrl = (url: string) => {

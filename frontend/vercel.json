@@ -5,6 +5,14 @@
   "framework": "vite",
   "rewrites": [
     {
+      "source": "/api/:path*",
+      "destination": "https://rosteriq-backend-9aje.onrender.com/api/:path*"
+    },
+    {
+      "source": "/health",
+      "destination": "https://rosteriq-backend-9aje.onrender.com/health"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
