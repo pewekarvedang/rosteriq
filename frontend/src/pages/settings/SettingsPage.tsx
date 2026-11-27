@@ -1,23 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Settings,
-  Clock,
-  Shield,
-  Cpu,
-  Plus,
-  Edit,
-  Trash2,
-  CheckCircle2,
-  ExternalLink,
-  Server,
-  Database,
-  Mail,
-} from 'lucide-react';
-
+import { Plus, Edit } from 'lucide-react';
 import { shiftService } from '../../services/shiftService';
 import { useToast } from '../../context/ToastContext';
 
-import { Card, CardHeader } from '../../components/common/Card';
 import { Button } from '../../components/common/Button';
 import { Badge } from '../../components/common/Badge';
 import { Modal } from '../../components/common/Modal';
@@ -31,17 +16,15 @@ export const SettingsPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [shifts, setShifts] = useState<Shift[]>([]);
 
-  // Modals state
   const [isAddShiftOpen, setIsAddShiftOpen] = useState<boolean>(false);
   const [editingShift, setEditingShift] = useState<Shift | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
-  // Shift form
   const [shiftForm, setShiftForm] = useState<ShiftCreate>({
     name: '',
     code: '',
     start_time: '09:00:00',
-    end_time: '18:00:00',
+    end_time: '17:00:00',
     duration_hours: 8.0,
     is_overnight: false,
     is_active: true,
@@ -52,8 +35,9 @@ export const SettingsPage: React.FC = () => {
     try {
       const data = await shiftService.getAll();
       setShifts(data);
-    } catch (err: any) {
-      showError('Failed to load shifts', err.message);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Unable to fetch shifts';
+      showError('Failed to load shifts', message);
     } finally {
       setIsLoading(false);
     }
@@ -68,7 +52,7 @@ export const SettingsPage: React.FC = () => {
       name: '',
       code: '',
       start_time: '09:00:00',
-      end_time: '18:00:00',
+      end_time: '17:00:00',
       duration_hours: 8.0,
       is_overnight: false,
       is_active: true,
@@ -96,83 +80,90 @@ export const SettingsPage: React.FC = () => {
       if (editingShift) {
         const updated = await shiftService.update(editingShift.id, shiftForm);
         setShifts((prev) => prev.map((s) => (s.id === editingShift.id ? updated : s)));
-        showSuccess('Shift Updated', `${updated.name} updated.`);
+        showSuccess('Shift Updated', `${updated.name} saved.`);
         setEditingShift(null);
       } else {
         const created = await shiftService.create(shiftForm);
         setShifts((prev) => [...prev, created]);
-        showSuccess('Shift Created', `${created.name} registered.`);
+        showSuccess('Shift Created', `${created.name} added.`);
         setIsAddShiftOpen(false);
       }
-    } catch (err: any) {
-      showError('Failed to save shift', err.message);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Save failed';
+      showError('Failed to save shift', message);
     } finally {
       setIsSubmitting(false);
     }
   };
 
   if (isLoading) {
-    return <LoadingSpinner message="Loading configuration & shift definitions..." />;
+    return <LoadingSpinner message="Loading shift definitions and solver rules..." />;
   }
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-300">
-      {/* Header */}
-      <div className="border-b border-slate-800 pb-5">
+    <div className="space-y-6 max-w-[1440px]">
+      <div className="border-b border-[#D9D4C7] pb-4">
         <div className="flex items-center gap-2">
-          <h2 className="text-xl font-bold text-slate-100 tracking-tight">SYSTEM SETTINGS & RULES</h2>
-          <Badge variant="purple" size="xs">
-            Configuration
+          <h2 className="text-xl font-bold text-[#1B1A17] tracking-tight">SYSTEM SETTINGS &amp; RULES</h2>
+          <Badge variant="default" size="xs">
+            Schedule Policy
           </Badge>
         </div>
-        <p className="text-xs text-slate-400 mt-1">
-          Shift operational windows, weekly-off distribution rules, workload constraints and solver parameters
+        <p className="text-xs text-[#57534A] mt-1">
+          Shift time windows, weekly hour caps, rest rules, and CP-SAT constraint weights.
         </p>
       </div>
 
-      {/* Section 1: Shifts Configuration */}
-      <Card>
-        <CardHeader
-          title="Operational Shift Windows"
-          subtitle="Shifts enforced during employee allocation and multi-process slotting"
-          action={
-            <Button size="sm" variant="primary" onClick={handleOpenAdd} leftIcon={<Plus className="w-3.5 h-3.5" />}>
-              Add Shift
-            </Button>
-          }
-        />
+      {/* Shift Definitions Table */}
+      <section className="border border-[#B8B1A1] bg-[#FBF9F5] rounded-[4px] overflow-hidden">
+        <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 border-b border-[#B8B1A1] bg-[#EDE8DC]">
+          <div>
+            <h3 className="text-sm font-semibold text-[#1B1A17]">Operational Shift Windows</h3>
+            <p className="text-xs text-[#57534A]">Start and end times enforced during schedule runs</p>
+          </div>
+          <Button
+            size="sm"
+            variant="primary"
+            onClick={handleOpenAdd}
+            leftIcon={<Plus className="w-3.5 h-3.5" />}
+          >
+            Add Shift
+          </Button>
+        </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs text-slate-300">
-            <thead className="border-b border-slate-800 bg-slate-950/80 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+          <table className="w-full text-left text-xs border-collapse tabular-nums">
+            <thead className="border-b border-[#B8B1A1] bg-[#F6F3EC] font-mono text-[11px] font-semibold uppercase tracking-wider text-[#57534A]">
               <tr>
                 <th className="px-4 py-3">Shift Name</th>
                 <th className="px-4 py-3">Code</th>
-                <th className="px-4 py-3">Time Window</th>
+                <th className="px-4 py-3">Window</th>
                 <th className="px-4 py-3 text-center">Duration</th>
                 <th className="px-4 py-3 text-center">Overnight</th>
                 <th className="px-4 py-3 text-center">Status</th>
-                <th className="px-4 py-3 text-right">Actions</th>
+                <th className="px-4 py-3 text-right">Edit</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/60">
+            <tbody className="divide-y divide-[#D9D4C7]">
               {shifts.map((s) => (
-                <tr key={s.id} className="hover:bg-slate-800/30 transition-colors">
-                  <td className="px-4 py-3 font-semibold text-slate-200">{s.name}</td>
-                  <td className="px-4 py-3 font-mono text-indigo-400">{s.code}</td>
-                  <td className="px-4 py-3 font-mono text-slate-300">
-                    {s.start_time.substring(0, 5)} - {s.end_time.substring(0, 5)}
+                <tr key={s.id} className="hover:bg-[#EDE8DC]/40 transition-colors">
+                  <td className="px-4 py-3 font-semibold text-[#1B1A17]">{s.name}</td>
+                  <td className="px-4 py-3 font-mono text-[#164B78]">{s.code}</td>
+                  <td className="px-4 py-3 font-mono text-[#1B1A17]">
+                    {s.start_time.substring(0, 5)}&ndash;{s.end_time.substring(0, 5)}
                   </td>
-                  <td className="px-4 py-3 text-center font-bold text-slate-100">{s.duration_hours} hrs</td>
-                  <td className="px-4 py-3 text-center">
+                  <td className="px-4 py-3 text-center font-mono font-bold text-[#1B1A17]">
+                    {s.duration_hours}h
+                  </td>
+                  <td className="px-4 py-3 text-center font-mono">
                     {s.is_overnight ? (
-                      <span className="text-amber-400 font-semibold">Yes</span>
+                      <span className="text-[#784300] font-semibold">Yes</span>
                     ) : (
-                      <span className="text-slate-500">No</span>
+                      <span className="text-[#57534A]">No</span>
                     )}
                   </td>
                   <td className="px-4 py-3 text-center">
-                    <Badge variant={s.is_active ? 'success' : 'default'} size="xs">
+                    <Badge variant={s.is_active ? 'success' : 'default'} size="xs" dot>
                       {s.is_active ? 'Active' : 'Inactive'}
                     </Badge>
                   </td>
@@ -181,7 +172,7 @@ export const SettingsPage: React.FC = () => {
                       size="sm"
                       variant="ghost"
                       onClick={() => handleOpenEdit(s)}
-                      className="p-1.5 h-auto text-slate-400 hover:text-slate-200"
+                      className="p-1.5 h-auto"
                     >
                       <Edit className="w-3.5 h-3.5" />
                     </Button>
@@ -191,101 +182,62 @@ export const SettingsPage: React.FC = () => {
             </tbody>
           </table>
         </div>
-      </Card>
+      </section>
 
-      {/* Section 2: Workforce Scheduling Rules & Policies */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-        <Card className="p-4 border-slate-800 bg-slate-900/50">
-          <div className="flex items-center gap-2 mb-2 text-indigo-400">
-            <Clock className="w-4 h-4" />
-            <h4 className="text-sm font-bold text-slate-100">Workload Capacity Standard</h4>
+      {/* Asymmetric Rule Ledger (NOT 3 equal boxed cards) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        <section className="lg:col-span-7 border border-[#D9D4C7] bg-[#FBF9F5] rounded-[4px]">
+          <div className="px-4 py-3 border-b border-[#B8B1A1] bg-[#EDE8DC] font-mono text-xs font-bold uppercase tracking-wider text-[#1B1A17]">
+            Hard &amp; Soft Constraint Rules
           </div>
-          <p className="text-xs text-slate-400 leading-relaxed">
-            - Maximum weekly hours: <strong>40.0 hours</strong>
-            <br />
-            - Maximum daily hours: <strong>8.0 hours</strong> (up to 2 processes per shift)
-            <br />
-            - Proportional scaling applied for partial calendar weeks.
-          </p>
-        </Card>
+          <dl className="divide-y divide-[#D9D4C7] text-xs tabular-nums">
+            <div className="px-4 py-3 flex justify-between gap-4">
+              <dt className="font-semibold text-[#1B1A17]">Default weekly hours cap</dt>
+              <dd className="font-mono text-[#57534A]">40.0h / calendar week (scaled on partial weeks)</dd>
+            </div>
+            <div className="px-4 py-3 flex justify-between gap-4">
+              <dt className="font-semibold text-[#1B1A17]">Daily maximum shift hours</dt>
+              <dd className="font-mono text-[#57534A]">8.0h / day (max 2 queues split per shift)</dd>
+            </div>
+            <div className="px-4 py-3 flex justify-between gap-4">
+              <dt className="font-semibold text-[#1B1A17]">Consecutive working days</dt>
+              <dd className="font-mono text-[#57534A]">Max 6 consecutive days before required off day</dd>
+            </div>
+            <div className="px-4 py-3 flex justify-between gap-4">
+              <dt className="font-semibold text-[#1B1A17]">Minimum weekly rest</dt>
+              <dd className="font-mono text-[#57534A]">At least 1 weekly off per week; approved leave blocked</dd>
+            </div>
+            <div className="px-4 py-3 flex justify-between gap-4">
+              <dt className="font-semibold text-[#1B1A17]">Objective priority</dt>
+              <dd className="font-mono text-[#57534A]">1. Fill headcount shortage (100,000) &middot; 2. Preferred offs</dd>
+            </div>
+          </dl>
+        </section>
 
-        <Card className="p-4 border-slate-800 bg-slate-900/50">
-          <div className="flex items-center gap-2 mb-2 text-emerald-400">
-            <Shield className="w-4 h-4" />
-            <h4 className="text-sm font-bold text-slate-100">Weekly Rest & Consecutivity</h4>
+        <section className="lg:col-span-5 border border-[#D9D4C7] bg-[#FBF9F5] rounded-[4px]">
+          <div className="px-4 py-3 border-b border-[#B8B1A1] bg-[#EDE8DC] font-mono text-xs font-bold uppercase tracking-wider text-[#1B1A17]">
+            Runtime Architecture
           </div>
-          <p className="text-xs text-slate-400 leading-relaxed">
-            - At least <strong>1 required weekly off</strong> per calendar week.
-            <br />
-            - Maximum <strong>6 consecutive working days</strong> before mandatory rest.
-            <br />
-            - Fair distribution of weekend shifts across pod peers.
-          </p>
-        </Card>
-
-        <Card className="p-4 border-slate-800 bg-slate-900/50">
-          <div className="flex items-center gap-2 mb-2 text-purple-400">
-            <Cpu className="w-4 h-4" />
-            <h4 className="text-sm font-bold text-slate-100">Deterministic CP-SAT Priorities</h4>
-          </div>
-          <p className="text-xs text-slate-400 leading-relaxed">
-            - Priority 1: Minimize coverage shortages (weight 100,000)
-            <br />
-            - Priority 2: Satisfy mandatory rest rules (hard constraint)
-            <br />
-            - Priority 3: Honor preferred weekly offs & balanced workload.
-          </p>
-        </Card>
+          <dl className="divide-y divide-[#D9D4C7] text-xs tabular-nums">
+            <div className="px-4 py-3 flex justify-between gap-4">
+              <dt className="text-[#57534A]">API Server</dt>
+              <dd className="font-mono text-[#1B1A17]">FastAPI + Python</dd>
+            </div>
+            <div className="px-4 py-3 flex justify-between gap-4">
+              <dt className="text-[#57534A]">Schedule Solver</dt>
+              <dd className="font-mono text-[#1B1A17]">Google OR-Tools CP-SAT</dd>
+            </div>
+            <div className="px-4 py-3 flex justify-between gap-4">
+              <dt className="text-[#57534A]">Persistence</dt>
+              <dd className="font-mono text-[#1B1A17]">SQLAlchemy 2.0 &middot; Alembic</dd>
+            </div>
+            <div className="px-4 py-3 flex justify-between gap-4">
+              <dt className="text-[#57534A]">API Prefix</dt>
+              <dd className="font-mono text-[#164B78]">/api/v1</dd>
+            </div>
+          </dl>
+        </section>
       </div>
-
-      {/* Section 3: Assessment Information & Platform Architecture */}
-      <Card className="p-5 border-slate-800">
-        <CardHeader
-          title="DataStraw Internship Assessment Architecture"
-          subtitle="Smart Roster Management System & Deployment Details"
-        />
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-          <div className="space-y-2 p-3.5 rounded-xl bg-slate-950 border border-slate-800">
-            <div className="flex items-center gap-2 text-indigo-400 font-semibold">
-              <Server className="w-4 h-4" />
-              <span>Backend & Optimizer</span>
-            </div>
-            <p className="text-slate-300">
-              <strong>Framework:</strong> FastAPI & Python 3.14
-            </p>
-            <p className="text-slate-300">
-              <strong>Constraint Engine:</strong> Google OR-Tools CP-SAT (v9.11)
-            </p>
-            <p className="text-slate-300">
-              <strong>Database:</strong> PostgreSQL / SQLAlchemy 2.0 with Alembic
-            </p>
-            <p className="text-slate-300">
-              <strong>Port:</strong> 8000 &bull; Proxy: /api/v1
-            </p>
-          </div>
-
-          <div className="space-y-2 p-3.5 rounded-xl bg-slate-950 border border-slate-800">
-            <div className="flex items-center gap-2 text-emerald-400 font-semibold">
-              <Mail className="w-4 h-4" />
-              <span>Assessment Reporting Recipients</span>
-            </div>
-            <p className="text-slate-300">
-              <strong>Primary Recipients:</strong>
-              <br />
-              &bull; ozair.shaikh@datastraw.in
-              <br />
-              &bull; aryan.jaiswal@datastraw.in
-            </p>
-            <p className="text-slate-300">
-              <strong>CC:</strong> talent@datastraw.in
-            </p>
-            <p className="text-slate-300">
-              <strong>Subject Format:</strong> Smart Roster Management System Assignment - [Full Name]
-            </p>
-          </div>
-        </div>
-      </Card>
 
       {/* Add / Edit Shift Modal */}
       {(isAddShiftOpen || editingShift) && (
@@ -295,8 +247,8 @@ export const SettingsPage: React.FC = () => {
             setIsAddShiftOpen(false);
             setEditingShift(null);
           }}
-          title={editingShift ? `Edit Shift - ${editingShift.name}` : 'Add Shift Definition'}
-          subtitle="Configure shift start/end times and duration"
+          title={editingShift ? `Edit Shift — ${editingShift.name}` : 'Add Shift'}
+          subtitle="Set start time, end time, and duration"
           maxWidth="md"
         >
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -335,7 +287,7 @@ export const SettingsPage: React.FC = () => {
                 onChange={(e) => setShiftForm({ ...shiftForm, end_time: e.target.value })}
               />
               <Input
-                label="Duration (Hours)"
+                label="Duration (h)"
                 type="number"
                 step="0.5"
                 min="1"
@@ -352,14 +304,14 @@ export const SettingsPage: React.FC = () => {
                 id="isOvernight"
                 checked={shiftForm.is_overnight}
                 onChange={(e) => setShiftForm({ ...shiftForm, is_overnight: e.target.checked })}
-                className="rounded border-slate-700 bg-slate-900 text-indigo-600 focus:ring-indigo-500"
+                className="rounded-[2px] border-[#B8B1A1]"
               />
-              <label htmlFor="isOvernight" className="text-xs text-slate-300 font-medium cursor-pointer">
-                Overnight Shift (crosses midnight boundary)
+              <label htmlFor="isOvernight" className="text-xs text-[#1B1A17] font-medium cursor-pointer">
+                Overnight Shift (crosses midnight)
               </label>
             </div>
 
-            <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-slate-800">
+            <div className="flex items-center justify-end gap-2 pt-4 border-t border-[#D9D4C7]">
               <Button
                 type="button"
                 variant="outline"

@@ -24,7 +24,7 @@ describe('Button Component', () => {
 
   it('renders different variants correctly', () => {
     const { rerender } = render(<Button variant="danger">Delete</Button>);
-    expect(screen.getByRole('button')).toHaveClass('bg-rose-600');
+    expect(screen.getByRole('button')).toHaveClass('bg-[#911D1D]');
 
     rerender(<Button variant="outline">Cancel</Button>);
     expect(screen.getByRole('button')).toHaveClass('bg-transparent');

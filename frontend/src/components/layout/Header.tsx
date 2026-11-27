@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Sparkles, Calendar, CheckCircle2, AlertCircle, RefreshCw, Shield, Server, Globe } from 'lucide-react';
+import { Calendar, Menu, RefreshCw, Server, Shield } from 'lucide-react';
 import { useRoster } from '../../context/RosterContext';
 import { useToast } from '../../context/ToastContext';
 import { Button } from '../common/Button';
@@ -23,7 +23,11 @@ const MONTH_NAMES = [
   'December',
 ];
 
-export const Header: React.FC = () => {
+interface HeaderProps {
+  onOpenMobileMenu?: () => void;
+}
+
+export const Header: React.FC<HeaderProps> = ({ onOpenMobileMenu }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { selectedMonth, setSelectedMonth, selectedYear, setSelectedYear } = useRoster();
@@ -41,7 +45,7 @@ export const Header: React.FC = () => {
   const handleRoleChange = (newRole: string) => {
     setActiveRole(newRole);
     localStorage.setItem('rosteriq_user_role', newRole);
-    showSuccess('RBAC Role Switched', `Active session updated to '${newRole}'.`);
+    showSuccess('Session role updated', `Active role set to ${newRole}.`);
   };
 
   const checkHealth = async () => {
@@ -63,11 +67,12 @@ export const Header: React.FC = () => {
     try {
       await apiClient.get('/health');
       setBackendStatus('connected');
-      showSuccess('Backend Connected', `Successfully connected to ${getApiBaseUrl()}`);
+      showSuccess('Server connected', `Connected to ${getApiBaseUrl()}`);
       setIsBackendModalOpen(false);
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Unable to reach endpoint';
       setBackendStatus('disconnected');
-      showError('Connection Failed', `Could not reach backend at ${getApiBaseUrl()}: ${err.message}`);
+      showError('Connection failed', `Could not reach ${getApiBaseUrl()}: ${msg}`);
     } finally {
       setIsCheckingHealth(false);
     }
@@ -77,7 +82,7 @@ export const Header: React.FC = () => {
     setCustomBackendUrl('');
     setBackendUrlInput('');
     checkHealth();
-    showSuccess('Reset to Default', 'Using default environment backend configuration.');
+    showSuccess('Endpoint reset', 'Using default API URL.');
     setIsBackendModalOpen(false);
   };
 
@@ -90,29 +95,29 @@ export const Header: React.FC = () => {
   const getPageTitle = (path: string) => {
     switch (path) {
       case '/':
-        return { title: 'Operational Dashboard', desc: 'Real-time workforce KPIs, staffing metrics & roster overview' };
+        return { title: 'Operational Dashboard', desc: 'Weekly schedule view, staffing ledger, and shift gaps' };
       case '/roster':
-        return { title: 'Monthly Roster Management', desc: 'OR-Tools CP-SAT deterministic schedule generation & matrix' };
+        return { title: 'Monthly Roster Sheet', desc: 'Full-month CP-SAT shift assignments and manual cell locks' };
       case '/coverage':
-        return { title: 'Staffing Coverage Analysis', desc: 'Required vs assigned staffing headcount by brand & process' };
+        return { title: 'Staffing Coverage Analysis', desc: 'Required headcount per brand process vs scheduled staff' };
       case '/conflicts':
-        return { title: 'Scheduling Conflicts Center', desc: 'Audit violations, severity alerts & automated revalidations' };
+        return { title: 'Scheduling Conflicts Center', desc: 'Overlapping shifts, weekly-off breaches, and leave clashes' };
       case '/employees':
-        return { title: 'Employee Management', desc: 'Directory, workload limits, weekly-off rules & availability' };
+        return { title: 'Employee Directory', desc: 'Hour caps, weekly off preferences, and pod placement' };
       case '/pods':
-        return { title: 'Operational Pods', desc: 'Pod structures, designated team leads & pod roster distribution' };
+        return { title: 'Operational Pods', desc: 'Team leads and assigned staff grouped by unit' };
       case '/brands':
-        return { title: 'Client Brands Management', desc: 'Operating calendars, process assignments & minimum staffing' };
+        return { title: 'Client Brands', desc: 'Operating calendars and minimum shift headcount per account' };
       case '/processes':
-        return { title: 'Business Processes', desc: 'CS, Abandoned Cart Conversions, Retention, NDR & custom workflows' };
+        return { title: 'Business Processes', desc: 'CS, Abandoned Cart, Retention, and NDR shift queues' };
       case '/assignments':
-        return { title: 'Employee Role Assignments', desc: 'Multi-brand & multi-process mapping with start/end dates' };
+        return { title: 'Employee Role Assignments', desc: 'Staff eligibility across brands, processes, and active dates' };
       case '/leaves-holidays':
-        return { title: 'Leaves & Public Holidays', desc: 'Leave approvals, comp-offs, and operating holiday exceptions' };
+        return { title: 'Leaves & Public Holidays', desc: 'Approved time off, comp-offs, and non-operating dates' };
       case '/settings':
-        return { title: 'System Configuration', desc: 'Shift timings, weekly-off policies, workload constraints & engine info' };
+        return { title: 'System Configuration', desc: 'Shift timings, weekly hour limits, and solver constraints' };
       default:
-        return { title: 'RosterIQ', desc: 'Intelligent Workforce Planning' };
+        return { title: 'RosterIQ', desc: 'Workforce shift roster and coverage timetable' };
     }
   };
 
@@ -120,39 +125,49 @@ export const Header: React.FC = () => {
 
   return (
     <>
-      <header className="sticky top-0 z-30 flex items-center justify-between border-b border-slate-800/80 bg-slate-950/80 px-8 py-3.5 backdrop-blur-md">
-        {/* Title & Description */}
-        <div>
-          <h1 className="text-lg font-bold text-slate-100 tracking-tight">{pageInfo.title}</h1>
-          <p className="text-xs text-slate-400 mt-0.5">{pageInfo.desc}</p>
+      <header className="sticky top-0 z-30 flex flex-wrap items-center justify-between gap-4 border-b border-[#D9D4C7] bg-[#FBF9F5] px-4 sm:px-6 py-3">
+        <div className="flex items-center gap-3 min-w-0">
+          {onOpenMobileMenu && (
+            <button
+              type="button"
+              onClick={onOpenMobileMenu}
+              aria-label="Open navigation menu"
+              className="lg:hidden p-2 rounded-[4px] border border-[#D9D4C7] text-[#1B1A17] hover:bg-[#EDE8DC] cursor-pointer"
+            >
+              <Menu className="w-4 h-4" />
+            </button>
+          )}
+          <div className="min-w-0">
+            <h1 className="text-base font-bold text-[#1B1A17] tracking-tight truncate">{pageInfo.title}</h1>
+            <p className="text-xs text-[#57534A] truncate">{pageInfo.desc}</p>
+          </div>
         </div>
 
-        {/* Right Controls: Month/Year selector & Backend status */}
-        <div className="flex items-center gap-3">
-          {/* Month Selector */}
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-800 bg-slate-900 text-xs text-slate-200">
-            <Calendar className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Period Selector */}
+          <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-[4px] border border-[#D9D4C7] bg-[#F6F3EC] text-xs text-[#1B1A17] font-mono tabular-nums">
+            <Calendar className="w-3.5 h-3.5 text-[#57534A] shrink-0" />
             <select
+              aria-label="Roster Month"
               value={selectedMonth}
               onChange={(e) => setSelectedMonth(Number(e.target.value))}
-              className="bg-transparent border-none text-slate-200 focus:outline-none cursor-pointer pr-1 font-medium"
+              className="bg-transparent border-none text-[#1B1A17] focus:outline-none cursor-pointer font-medium"
             >
               {MONTH_NAMES.map((name, idx) => (
-                <option key={name} value={idx + 1} className="bg-slate-900 text-slate-100">
+                <option key={name} value={idx + 1} className="bg-[#FBF9F5] text-[#1B1A17]">
                   {name}
                 </option>
               ))}
             </select>
-
-            <span className="text-slate-600">/</span>
-
+            <span className="text-[#57534A]">/</span>
             <select
+              aria-label="Roster Year"
               value={selectedYear}
               onChange={(e) => setSelectedYear(Number(e.target.value))}
-              className="bg-transparent border-none text-slate-200 focus:outline-none cursor-pointer font-medium"
+              className="bg-transparent border-none text-[#1B1A17] focus:outline-none cursor-pointer font-medium"
             >
               {[2024, 2025, 2026, 2027].map((yr) => (
-                <option key={yr} value={yr} className="bg-slate-900 text-slate-100">
+                <option key={yr} value={yr} className="bg-[#FBF9F5] text-[#1B1A17]">
                   {yr}
                 </option>
               ))}
@@ -160,59 +175,60 @@ export const Header: React.FC = () => {
           </div>
 
           {/* RBAC Role Selector */}
-          <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-slate-800 bg-slate-900 text-xs text-slate-200">
-            <Shield className="w-3.5 h-3.5 text-purple-400 shrink-0" />
+          <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-[4px] border border-[#D9D4C7] bg-[#F6F3EC] text-xs text-[#1B1A17]">
+            <Shield className="w-3.5 h-3.5 text-[#57534A] shrink-0" />
             <select
               value={activeRole}
               onChange={(e) => handleRoleChange(e.target.value)}
-              className="bg-transparent border-none text-slate-200 focus:outline-none cursor-pointer font-medium text-[11px]"
+              className="bg-transparent border-none text-[#1B1A17] focus:outline-none cursor-pointer font-medium text-xs"
               title="Switch Session Role to test RBAC"
             >
-              <option value="Operations Manager" className="bg-slate-900 text-slate-100">
+              <option value="Operations Manager" className="bg-[#FBF9F5] text-[#1B1A17]">
                 Ops Manager
               </option>
-              <option value="Pod Lead" className="bg-slate-900 text-slate-100">
+              <option value="Pod Lead" className="bg-[#FBF9F5] text-[#1B1A17]">
                 Pod Lead
               </option>
-              <option value="Employee" className="bg-slate-900 text-slate-100">
+              <option value="Employee" className="bg-[#FBF9F5] text-[#1B1A17]">
                 Employee
               </option>
             </select>
           </div>
 
-          {/* Backend Status indicator */}
-          <div
+          {/* API Connection Indicator (color + glyph + label) */}
+          <button
+            type="button"
             onClick={() => setIsBackendModalOpen(true)}
-            title="Click to configure or test Backend Connection"
-            className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-slate-800 bg-slate-900/60 text-xs text-slate-300 cursor-pointer hover:bg-slate-900 hover:border-slate-700 transition-colors"
+            title="Configure API server URL"
+            className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-[4px] border font-mono text-[11px] font-medium cursor-pointer transition-colors ${
+              backendStatus === 'connected'
+                ? 'border-[#8EB8A6] bg-[#E5EFEA] text-[#144836]'
+                : backendStatus === 'checking' || isCheckingHealth
+                  ? 'border-[#D9AD5B] bg-[#FBF1DC] text-[#784300]'
+                  : 'border-[#D67A7A] bg-[#FAE6E6] text-[#911D1D]'
+            }`}
           >
             {backendStatus === 'connected' ? (
               <>
-                <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-sm shadow-emerald-500 animate-pulse-subtle" />
-                <span className="text-[11px] font-medium text-emerald-400">API Live</span>
+                <span aria-hidden="true">✓</span>
+                <span>API live</span>
               </>
             ) : backendStatus === 'checking' || isCheckingHealth ? (
               <>
-                <RefreshCw className="w-3 h-3 text-amber-400 animate-spin" />
-                <span className="text-[11px] font-medium text-amber-400">Connecting</span>
+                <RefreshCw className="w-3 h-3 animate-spin motion-reduce:animate-none" />
+                <span>Connecting</span>
               </>
             ) : (
               <>
-                <span className="w-2 h-2 rounded-full bg-rose-500" />
-                <span className="text-[11px] font-medium text-rose-400">Offline (Click to link)</span>
+                <span aria-hidden="true">✕</span>
+                <span>Offline · Link</span>
               </>
             )}
-          </div>
+          </button>
 
-          {/* Quick Navigate to Roster Generator if on another page */}
           {location.pathname !== '/roster' && (
-            <Button
-              size="sm"
-              variant="primary"
-              leftIcon={<Sparkles className="w-3.5 h-3.5" />}
-              onClick={() => navigate('/roster')}
-            >
-              Open Roster Engine
+            <Button size="sm" variant="primary" onClick={() => navigate('/roster')}>
+              Open Roster Sheet
             </Button>
           )}
         </div>
@@ -223,51 +239,44 @@ export const Header: React.FC = () => {
         <Modal
           isOpen={true}
           onClose={() => setIsBackendModalOpen(false)}
-          title="Backend API Connection"
-          subtitle="Configure or update the FastAPI server endpoint"
+          title="API Server Connection"
+          subtitle="Configure the FastAPI roster solver endpoint"
           maxWidth="md"
         >
           <form onSubmit={handleSaveBackendUrl} className="space-y-4">
-            <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-1.5 text-xs">
+            <div className="p-3 rounded-[4px] bg-[#F6F3EC] border border-[#D9D4C7] space-y-2 text-xs">
               <div className="flex items-center justify-between">
-                <span className="text-slate-400">Status:</span>
-                <span className={`font-semibold ${backendStatus === 'connected' ? 'text-emerald-400' : 'text-rose-400'}`}>
-                  {backendStatus === 'connected' ? '● Connected' : '○ Offline'}
+                <span className="text-[#57534A]">Status</span>
+                <span
+                  className={`font-mono font-semibold ${
+                    backendStatus === 'connected' ? 'text-[#144836]' : 'text-[#911D1D]'
+                  }`}
+                >
+                  {backendStatus === 'connected' ? '✓ Connected' : '✕ Offline'}
                 </span>
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-slate-400">Active URL:</span>
-                <span className="font-mono text-indigo-400 truncate max-w-[240px]" title={getApiBaseUrl()}>
+              <div className="flex items-center justify-between gap-4">
+                <span className="text-[#57534A] shrink-0">Endpoint</span>
+                <span className="font-mono text-[#164B78] truncate" title={getApiBaseUrl()}>
                   {getApiBaseUrl()}
                 </span>
               </div>
             </div>
 
             <Input
-              label="Render / Cloud Backend URL"
-              placeholder="https://rosteriq-backend-xxxx.onrender.com"
+              label="Server Base URL"
+              placeholder="https://rosteriq-backend-9aje.onrender.com"
               value={backendUrlInput}
               onChange={(e) => setBackendUrlInput(e.target.value)}
-              helperText="Paste your Render Web Service URL here (or http://127.0.0.1:8000 for local dev)"
+              helperText="Enter your hosted backend URL or http://127.0.0.1:8000 for local development."
             />
 
-            <div className="flex items-center justify-between pt-2 border-t border-slate-800">
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={handleResetBackendUrl}
-                className="text-slate-400 hover:text-slate-200"
-              >
-                Reset to Default
+            <div className="flex items-center justify-between pt-4 border-t border-[#D9D4C7]">
+              <Button type="button" variant="ghost" size="sm" onClick={handleResetBackendUrl}>
+                Reset default
               </Button>
               <div className="flex items-center gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setIsBackendModalOpen(false)}
-                >
+                <Button type="button" variant="outline" size="sm" onClick={() => setIsBackendModalOpen(false)}>
                   Close
                 </Button>
                 <Button
@@ -277,7 +286,7 @@ export const Header: React.FC = () => {
                   isLoading={isCheckingHealth}
                   leftIcon={<Server className="w-3.5 h-3.5" />}
                 >
-                  Save & Connect
+                  Save &amp; Connect
                 </Button>
               </div>
             </div>

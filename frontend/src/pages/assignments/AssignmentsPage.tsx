@@ -1,24 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import {
-  UserCheck,
-  Plus,
-  Search,
-  Filter,
-  Edit,
-  Trash2,
-  Building2,
-  Layers,
-  Users,
-  Calendar,
-} from 'lucide-react';
-
+import { Plus, Search, Edit, Trash2 } from 'lucide-react';
 import { assignmentService } from '../../services/assignmentService';
 import { employeeService } from '../../services/employeeService';
 import { brandService } from '../../services/brandService';
 import { processService } from '../../services/processService';
 import { useToast } from '../../context/ToastContext';
 
-import { Card } from '../../components/common/Card';
 import { Button } from '../../components/common/Button';
 import { Badge } from '../../components/common/Badge';
 import { Modal } from '../../components/common/Modal';
@@ -43,17 +30,14 @@ export const AssignmentsPage: React.FC = () => {
   const [brands, setBrands] = useState<Brand[]>([]);
   const [processes, setProcesses] = useState<Process[]>([]);
 
-  // Filters
   const [filterBrandId, setFilterBrandId] = useState<number | 'all'>('all');
   const [filterProcessId, setFilterProcessId] = useState<number | 'all'>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
 
-  // Modals state
   const [isAddModalOpen, setIsAddModalOpen] = useState<boolean>(false);
   const [editingAssignment, setEditingAssignment] = useState<EmployeeAssignment | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
-  // Form
   const [formData, setFormData] = useState<EmployeeAssignmentCreate>({
     employee_id: 0,
     brand_id: 0,
@@ -77,8 +61,9 @@ export const AssignmentsPage: React.FC = () => {
       setEmployees(eList);
       setBrands(bList);
       setProcesses(pList);
-    } catch (err: any) {
-      showError('Failed to load employee assignments', err.message);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Unable to fetch assignments';
+      showError('Failed to load employee assignments', message);
     } finally {
       setIsLoading(false);
     }
@@ -126,29 +111,31 @@ export const AssignmentsPage: React.FC = () => {
           is_active: formData.is_active,
         });
         setAssignments((prev) => prev.map((item) => (item.id === editingAssignment.id ? updated : item)));
-        showSuccess('Assignment Updated', 'Employee role assignment saved.');
+        showSuccess('Assignment Updated', 'Staff role mapping saved.');
         setEditingAssignment(null);
       } else {
         const created = await assignmentService.create(formData);
         setAssignments((prev) => [...prev, created]);
-        showSuccess('Assignment Created', 'Employee successfully mapped to brand process.');
+        showSuccess('Assignment Created', 'Employee mapped to brand and process.');
         setIsAddModalOpen(false);
       }
-    } catch (err: any) {
-      showError('Assignment update failed', err.message);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Save failed';
+      showError('Assignment update failed', message);
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleDeleteAssignment = async (id: number) => {
-    if (!confirm('Are you sure you want to remove this employee brand-process assignment?')) return;
+    if (!confirm('Remove this employee brand-process assignment?')) return;
     try {
       await assignmentService.delete(id);
       setAssignments((prev) => prev.filter((a) => a.id !== id));
-      showSuccess('Assignment Removed', 'Employee role mapping deleted.');
-    } catch (err: any) {
-      showError('Deletion failed', err.message);
+      showSuccess('Assignment Removed', 'Role mapping deleted.');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Delete failed';
+      showError('Deletion failed', message);
     }
   };
 
@@ -159,32 +146,32 @@ export const AssignmentsPage: React.FC = () => {
 
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
-        const matchesEmp = a.employee_name?.toLowerCase().includes(q);
-        const matchesBrand = a.brand_name?.toLowerCase().includes(q);
-        const matchesProc = a.process_name?.toLowerCase().includes(q);
-        return matchesEmp || matchesBrand || matchesProc;
+        return (
+          Boolean(a.employee_name?.toLowerCase().includes(q)) ||
+          Boolean(a.brand_name?.toLowerCase().includes(q)) ||
+          Boolean(a.process_name?.toLowerCase().includes(q))
+        );
       }
       return true;
     });
   }, [assignments, filterBrandId, filterProcessId, searchQuery]);
 
   if (isLoading) {
-    return <LoadingSpinner message="Loading employee brand-process assignments..." />;
+    return <LoadingSpinner message="Loading employee role assignments..." />;
   }
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-300">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-5">
+    <div className="space-y-6 max-w-[1440px]">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#D9D4C7] pb-4">
         <div>
           <div className="flex items-center gap-2">
-            <h2 className="text-xl font-bold text-slate-100 tracking-tight">EMPLOYEE ROLE ASSIGNMENTS</h2>
-            <Badge variant="info" size="xs">
+            <h2 className="text-xl font-bold text-[#1B1A17] tracking-tight">EMPLOYEE ROLE ASSIGNMENTS</h2>
+            <Badge variant="default" size="xs">
               {assignments.length} Mappings
             </Badge>
           </div>
-          <p className="text-xs text-slate-400 mt-1">
-            Map employees to multiple brands and processes with primary/secondary designations and date validity
+          <p className="text-xs text-[#57534A] mt-1">
+            Eligible employee-to-brand and process pairings used by the shift solver.
           </p>
         </div>
 
@@ -198,26 +185,24 @@ export const AssignmentsPage: React.FC = () => {
         </Button>
       </div>
 
-      {/* Filter and Search Bar */}
-      <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 bg-slate-900/80 p-3 rounded-xl border border-slate-800">
+      {/* Filters */}
+      <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 bg-[#FBF9F5] p-3 rounded-[4px] border border-[#D9D4C7]">
         <div className="flex flex-wrap items-center gap-2">
-          {/* Search */}
           <div className="relative">
-            <Search className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-2.5 pointer-events-none" />
+            <Search className="w-3.5 h-3.5 text-[#57534A] absolute left-3 top-2 pointer-events-none" />
             <input
               type="text"
               placeholder="Search employee, brand, process..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="bg-slate-950 border border-slate-800 rounded-lg pl-9 pr-3 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500 w-64"
+              className="bg-[#F6F3EC] border border-[#D9D4C7] rounded-[4px] pl-8 pr-3 py-1.5 text-xs text-[#1B1A17] placeholder-[#57534A]/70 w-64"
             />
           </div>
 
-          {/* Brand Filter */}
           <select
             value={filterBrandId}
             onChange={(e) => setFilterBrandId(e.target.value === 'all' ? 'all' : Number(e.target.value))}
-            className="bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none"
+            className="bg-[#F6F3EC] border border-[#D9D4C7] rounded-[4px] px-3 py-1.5 text-xs text-[#1B1A17]"
           >
             <option value="all">All Brands ({brands.length})</option>
             {brands.map((b) => (
@@ -227,11 +212,10 @@ export const AssignmentsPage: React.FC = () => {
             ))}
           </select>
 
-          {/* Process Filter */}
           <select
             value={filterProcessId}
             onChange={(e) => setFilterProcessId(e.target.value === 'all' ? 'all' : Number(e.target.value))}
-            className="bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none"
+            className="bg-[#F6F3EC] border border-[#D9D4C7] rounded-[4px] px-3 py-1.5 text-xs text-[#1B1A17]"
           >
             <option value="all">All Processes ({processes.length})</option>
             {processes.map((p) => (
@@ -242,61 +226,62 @@ export const AssignmentsPage: React.FC = () => {
           </select>
         </div>
 
-        <span className="text-xs text-slate-400">
-          Showing {filteredAssignments.length} of {assignments.length} assignments
+        <span className="font-mono text-xs text-[#57534A] tabular-nums">
+          {filteredAssignments.length} / {assignments.length} mappings
         </span>
       </div>
 
-      {/* Table */}
-      <Card>
+      {/* Ruled Table */}
+      <div className="border border-[#B8B1A1] bg-[#FBF9F5] rounded-[4px] overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs text-slate-300">
-            <thead className="border-b border-slate-800 bg-slate-950/80 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+          <table className="w-full text-left text-xs border-collapse tabular-nums">
+            <thead className="border-b border-[#B8B1A1] bg-[#EDE8DC] font-mono text-[11px] font-semibold uppercase tracking-wider text-[#57534A]">
               <tr>
                 <th className="px-4 py-3">Employee</th>
                 <th className="px-4 py-3">Client Brand</th>
-                <th className="px-4 py-3">Business Process</th>
-                <th className="px-4 py-3 text-center">Designation</th>
-                <th className="px-4 py-3">Validity Period</th>
+                <th className="px-4 py-3">Process</th>
+                <th className="px-4 py-3 text-center">Priority</th>
+                <th className="px-4 py-3">Effective Dates</th>
                 <th className="px-4 py-3 text-center">Status</th>
                 <th className="px-4 py-3 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/60">
+            <tbody className="divide-y divide-[#D9D4C7]">
               {filteredAssignments.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-12 text-center text-slate-500">
-                    No role assignments match the selected filters.
+                  <td colSpan={7} className="py-10 text-center text-[#57534A]">
+                    No role assignments match the filters.
                   </td>
                 </tr>
               ) : (
                 filteredAssignments.map((a) => (
-                  <tr key={a.id} className="hover:bg-slate-800/30 transition-colors">
-                    <td className="px-4 py-3 font-semibold text-slate-200">
+                  <tr key={a.id} className="hover:bg-[#EDE8DC]/40 transition-colors">
+                    <td className="px-4 py-2.5 font-semibold text-[#1B1A17]">
                       {a.employee_name || `Employee #${a.employee_id}`}
                     </td>
-                    <td className="px-4 py-3 text-slate-200 font-medium">{a.brand_name}</td>
-                    <td className="px-4 py-3 text-indigo-400 font-medium">{a.process_name}</td>
-                    <td className="px-4 py-3 text-center">
-                      <Badge variant={a.is_primary ? 'purple' : 'default'} size="xs">
+                    <td className="px-4 py-2.5 text-[#1B1A17]">{a.brand_name}</td>
+                    <td className="px-4 py-2.5 text-[#164B78] font-medium">{a.process_name}</td>
+                    <td className="px-4 py-2.5 text-center">
+                      <Badge variant={a.is_primary ? 'info' : 'default'} size="xs">
                         {a.is_primary ? 'Primary' : 'Secondary'}
                       </Badge>
                     </td>
-                    <td className="px-4 py-3 font-mono text-slate-400 text-[11px]">
+                    <td className="px-4 py-2.5 font-mono text-[#57534A] text-[11px]">
                       {a.start_date} &rarr; {a.end_date || 'Present'}
                     </td>
-                    <td className="px-4 py-3 text-center">
-                      <Badge variant={a.is_active ? 'success' : 'default'} size="xs">
+                    <td className="px-4 py-2.5 text-center">
+                      <Badge variant={a.is_active ? 'success' : 'default'} size="xs" dot>
                         {a.is_active ? 'Active' : 'Inactive'}
                       </Badge>
                     </td>
-                    <td className="px-4 py-3 text-right">
+                    <td className="px-4 py-2.5 text-right">
                       <div className="flex items-center justify-end gap-1">
                         <Button
                           size="sm"
                           variant="ghost"
                           onClick={() => handleOpenEdit(a)}
-                          className="p-1.5 h-auto text-slate-400 hover:text-slate-200"
+                          className="p-1.5 h-auto"
+                          title="Edit Assignment"
                         >
                           <Edit className="w-3.5 h-3.5" />
                         </Button>
@@ -304,7 +289,8 @@ export const AssignmentsPage: React.FC = () => {
                           size="sm"
                           variant="ghost"
                           onClick={() => handleDeleteAssignment(a.id)}
-                          className="p-1.5 h-auto text-rose-400 hover:text-rose-300"
+                          className="p-1.5 h-auto text-[#911D1D]"
+                          title="Remove Assignment"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </Button>
@@ -316,9 +302,9 @@ export const AssignmentsPage: React.FC = () => {
             </tbody>
           </table>
         </div>
-      </Card>
+      </div>
 
-      {/* Add / Edit Assignment Modal */}
+      {/* Add / Edit Modal */}
       {(isAddModalOpen || editingAssignment) && (
         <Modal
           isOpen={true}
@@ -326,14 +312,14 @@ export const AssignmentsPage: React.FC = () => {
             setIsAddModalOpen(false);
             setEditingAssignment(null);
           }}
-          title={editingAssignment ? 'Edit Role Assignment' : 'Assign Employee to Brand & Process'}
-          subtitle="Configure multi-brand and multi-process handling eligibility"
+          title={editingAssignment ? 'Edit Role Assignment' : 'Assign Employee'}
+          subtitle="Map an employee to a client brand and process queue"
           maxWidth="md"
         >
           <form onSubmit={handleSubmit} className="space-y-4">
             {!editingAssignment && (
               <Select
-                label="Select Employee"
+                label="Employee"
                 required
                 value={formData.employee_id}
                 onChange={(e) => setFormData({ ...formData, employee_id: Number(e.target.value) })}
@@ -362,14 +348,14 @@ export const AssignmentsPage: React.FC = () => {
 
             <div className="grid grid-cols-2 gap-3">
               <Input
-                label="Assignment Start Date"
+                label="Start Date"
                 type="date"
                 required
                 value={formData.start_date}
                 onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
               />
               <Input
-                label="Assignment End Date (Optional)"
+                label="End Date (Optional)"
                 type="date"
                 value={formData.end_date || ''}
                 onChange={(e) => setFormData({ ...formData, end_date: e.target.value || null })}
@@ -382,14 +368,14 @@ export const AssignmentsPage: React.FC = () => {
                 id="isPrimary"
                 checked={formData.is_primary}
                 onChange={(e) => setFormData({ ...formData, is_primary: e.target.checked })}
-                className="rounded border-slate-700 bg-slate-900 text-indigo-600 focus:ring-indigo-500"
+                className="rounded-[2px] border-[#B8B1A1]"
               />
-              <label htmlFor="isPrimary" className="text-xs text-slate-300 font-medium cursor-pointer">
+              <label htmlFor="isPrimary" className="text-xs text-[#1B1A17] font-medium cursor-pointer">
                 Designate as Primary Role Assignment
               </label>
             </div>
 
-            <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-slate-800">
+            <div className="flex items-center justify-end gap-2 pt-4 border-t border-[#D9D4C7]">
               <Button
                 type="button"
                 variant="outline"

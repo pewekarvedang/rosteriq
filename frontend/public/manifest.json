@@ -1,11 +1,11 @@
 {
-  "name": "RosterIQ - Smart Roster Management",
+  "name": "RosterIQ — Shift Schedules & Coverage Ledger",
   "short_name": "RosterIQ",
-  "description": "Intelligent Workforce Planning & Deterministic Roster Optimization System",
+  "description": "Workforce shift roster planner, constraint checker, and coverage schedule ledger",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0b0f19",
-  "theme_color": "#4f46e5",
+  "background_color": "#F6F3EC",
+  "theme_color": "#164B78",
   "icons": [
     {
       "src": "/vite.svg",

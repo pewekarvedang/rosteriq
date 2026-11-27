@@ -9,11 +9,11 @@ describe('Badge Component', () => {
     expect(screen.getByText('Active Status')).toBeInTheDocument();
   });
 
-  it('renders WORKING roster status badge', () => {
+  it('renders WORKING roster status badge with paper-ink covered styling', () => {
     render(<Badge variant="WORKING">W</Badge>);
     const el = screen.getByText('W');
     expect(el).toBeInTheDocument();
-    expect(el.className).toContain('text-indigo-300');
+    expect(el.className).toContain('text-[#144836]');
   });
 
   it('renders CRITICAL conflict badge with dot indicator', () => {

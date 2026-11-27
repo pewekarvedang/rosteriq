@@ -1,30 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Layers,
-  Plus,
-  Edit,
-  Trash2,
-  CheckCircle2,
-  XCircle,
-  Building2,
-  Headphones,
-  ShoppingCart,
-  RotateCcw,
-  Truck,
-  Sparkles,
-} from 'lucide-react';
-
+import { Plus, Edit } from 'lucide-react';
 import { processService } from '../../services/processService';
 import { brandService } from '../../services/brandService';
 import { useToast } from '../../context/ToastContext';
 
-import { Card } from '../../components/common/Card';
 import { Button } from '../../components/common/Button';
 import { Badge } from '../../components/common/Badge';
 import { Modal } from '../../components/common/Modal';
 import { Input } from '../../components/common/Input';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
-
 import { Process, ProcessCreate, BrandProcess } from '../../types';
 
 export const ProcessesPage: React.FC = () => {
@@ -34,12 +18,10 @@ export const ProcessesPage: React.FC = () => {
   const [processes, setProcesses] = useState<Process[]>([]);
   const [brandProcesses, setBrandProcesses] = useState<BrandProcess[]>([]);
 
-  // Modals state
   const [isAddModalOpen, setIsAddModalOpen] = useState<boolean>(false);
   const [editingProcess, setEditingProcess] = useState<Process | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
-  // Form
   const [formData, setFormData] = useState<ProcessCreate>({
     name: '',
     code: '',
@@ -56,8 +38,9 @@ export const ProcessesPage: React.FC = () => {
       ]);
       setProcesses(pList);
       setBrandProcesses(bpList);
-    } catch (err: any) {
-      showError('Failed to load processes', err.message);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Unable to fetch processes';
+      showError('Failed to load processes', message);
     } finally {
       setIsLoading(false);
     }
@@ -94,34 +77,19 @@ export const ProcessesPage: React.FC = () => {
       if (editingProcess) {
         const updated = await processService.update(editingProcess.id, formData);
         setProcesses((prev) => prev.map((item) => (item.id === editingProcess.id ? updated : item)));
-        showSuccess('Process Updated', `${updated.name} updated.`);
+        showSuccess('Process Updated', `${updated.name} saved.`);
         setEditingProcess(null);
       } else {
         const created = await processService.create(formData);
         setProcesses((prev) => [...prev, created]);
-        showSuccess('Process Created', `${created.name} registered.`);
+        showSuccess('Process Created', `${created.name} added.`);
         setIsAddModalOpen(false);
       }
-    } catch (err: any) {
-      showError('Failed to save process', err.message);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Save failed';
+      showError('Failed to save process', message);
     } finally {
       setIsSubmitting(false);
-    }
-  };
-
-  const getProcessIcon = (code: string) => {
-    switch (code) {
-      case 'CS':
-        return <Headphones className="w-5 h-5 text-indigo-400" />;
-      case 'ACC':
-        return <ShoppingCart className="w-5 h-5 text-amber-400" />;
-      case 'RET':
-      case 'RETENTION':
-        return <RotateCcw className="w-5 h-5 text-teal-400" />;
-      case 'NDR':
-        return <Truck className="w-5 h-5 text-rose-400" />;
-      default:
-        return <Layers className="w-5 h-5 text-purple-400" />;
     }
   };
 
@@ -130,18 +98,17 @@ export const ProcessesPage: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-300">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-5">
+    <div className="space-y-6 max-w-[1440px]">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#D9D4C7] pb-4">
         <div>
           <div className="flex items-center gap-2">
-            <h2 className="text-xl font-bold text-slate-100 tracking-tight">OPERATIONAL PROCESSES</h2>
-            <Badge variant="purple" size="xs">
-              {processes.length} Processes
+            <h2 className="text-xl font-bold text-[#1B1A17] tracking-tight">OPERATIONAL PROCESSES</h2>
+            <Badge variant="default" size="xs">
+              {processes.length} Queues
             </Badge>
           </div>
-          <p className="text-xs text-slate-400 mt-1">
-            Customer Support, Abandoned Cart Conversions, Retention, Non-Delivery Report Management & VIP Workflows
+          <p className="text-xs text-[#57534A] mt-1">
+            Customer Support, Abandoned Cart Conversions, Retention, NDR, and VIP queue types.
           </p>
         </div>
 
@@ -155,50 +122,56 @@ export const ProcessesPage: React.FC = () => {
         </Button>
       </div>
 
-      {/* Process Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-        {processes.map((proc) => {
-          const linkedBrandCount = brandProcesses.filter((bp) => bp.process_id === proc.id).length;
-          return (
-            <Card key={proc.id} className="p-5 flex flex-col justify-between">
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800">
-                    {getProcessIcon(proc.code)}
-                  </div>
-                  <Badge variant={proc.is_active ? 'success' : 'default'} size="xs">
-                    {proc.is_active ? 'Active' : 'Inactive'}
-                  </Badge>
-                </div>
-
-                <h3 className="text-base font-bold text-slate-100 tracking-tight">{proc.name}</h3>
-                <p className="text-xs text-indigo-400 font-mono mt-0.5">{proc.code}</p>
-                <p className="text-xs text-slate-400 mt-2 line-clamp-2">
-                  {proc.description || 'Core customer lifecycle operational workflow'}
-                </p>
-              </div>
-
-              <div className="mt-5 pt-3.5 border-t border-slate-800/80 flex items-center justify-between text-xs">
-                <span className="text-slate-400 flex items-center gap-1.5">
-                  <Building2 className="w-3.5 h-3.5 text-slate-400" />
-                  <strong>{linkedBrandCount}</strong> Brands Operating
-                </span>
-
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => handleOpenEdit(proc)}
-                  className="p-1 h-auto text-slate-400 hover:text-slate-200"
-                >
-                  <Edit className="w-3.5 h-3.5" />
-                </Button>
-              </div>
-            </Card>
-          );
-        })}
+      <div className="border border-[#B8B1A1] bg-[#FBF9F5] rounded-[4px] overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs border-collapse tabular-nums">
+            <thead className="border-b border-[#B8B1A1] bg-[#EDE8DC] font-mono text-[11px] font-semibold uppercase tracking-wider text-[#57534A]">
+              <tr>
+                <th className="px-4 py-3">Code</th>
+                <th className="px-4 py-3">Process Name</th>
+                <th className="px-4 py-3">Scope</th>
+                <th className="px-4 py-3 text-center">Linked Brands</th>
+                <th className="px-4 py-3 text-center">Status</th>
+                <th className="px-4 py-3 text-right">Edit</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[#D9D4C7]">
+              {processes.map((proc) => {
+                const linkedBrandCount = brandProcesses.filter((bp) => bp.process_id === proc.id).length;
+                return (
+                  <tr key={proc.id} className="hover:bg-[#EDE8DC]/40 transition-colors">
+                    <td className="px-4 py-3 font-mono font-semibold text-[#164B78]">{proc.code}</td>
+                    <td className="px-4 py-3 font-semibold text-[#1B1A17]">{proc.name}</td>
+                    <td className="px-4 py-3 text-[#57534A]">
+                      {proc.description || 'Operational customer service queue'}
+                    </td>
+                    <td className="px-4 py-3 text-center font-mono font-bold text-[#1B1A17]">
+                      {linkedBrandCount}
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <Badge variant={proc.is_active ? 'success' : 'default'} size="xs" dot>
+                        {proc.is_active ? 'Active' : 'Inactive'}
+                      </Badge>
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleOpenEdit(proc)}
+                        className="p-1.5 h-auto"
+                        title="Edit Process"
+                      >
+                        <Edit className="w-3.5 h-3.5" />
+                      </Button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       </div>
 
-      {/* Add / Edit Process Modal */}
       {(isAddModalOpen || editingProcess) && (
         <Modal
           isOpen={true}
@@ -206,8 +179,8 @@ export const ProcessesPage: React.FC = () => {
             setIsAddModalOpen(false);
             setEditingProcess(null);
           }}
-          title={editingProcess ? `Edit Process - ${editingProcess.name}` : 'Create Business Process'}
-          subtitle="Configure business workflow code and operational specifications"
+          title={editingProcess ? `Edit Process — ${editingProcess.name}` : 'Create Process'}
+          subtitle="Define queue code and scope"
           maxWidth="md"
         >
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -232,10 +205,10 @@ export const ProcessesPage: React.FC = () => {
               label="Description (Optional)"
               value={formData.description || ''}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              placeholder="Inbound customer service, tickets and inquiries"
+              placeholder="Inbound tickets, live chat, and voice"
             />
 
-            <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-slate-800">
+            <div className="flex items-center justify-end gap-2 pt-4 border-t border-[#D9D4C7]">
               <Button
                 type="button"
                 variant="outline"

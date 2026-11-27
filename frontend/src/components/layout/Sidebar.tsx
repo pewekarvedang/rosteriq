@@ -12,12 +12,14 @@ import {
   UserCheck,
   CalendarOff,
   Settings,
-  Sparkles,
-  Cpu,
 } from 'lucide-react';
 import { conflictService } from '../../services/conflictService';
 
-export const Sidebar: React.FC = () => {
+interface SidebarProps {
+  onNavigate?: () => void;
+}
+
+export const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
   const [unresolvedConflictsCount, setUnresolvedConflictsCount] = useState<number>(0);
 
   useEffect(() => {
@@ -26,7 +28,7 @@ export const Sidebar: React.FC = () => {
         const conflicts = await conflictService.getAll({ is_resolved: false });
         setUnresolvedConflictsCount(conflicts.length);
       } catch {
-        // Silent catch for initial load
+        // Silent catch during disconnected initial boot
       }
     };
     fetchConflicts();
@@ -36,22 +38,21 @@ export const Sidebar: React.FC = () => {
 
   const navGroups = [
     {
-      group: 'Core Operations',
+      group: 'Schedule',
       items: [
         { to: '/', label: 'Dashboard', icon: LayoutDashboard },
-        { to: '/roster', label: 'Monthly Roster', icon: CalendarDays, badge: 'OR-Tools' },
+        { to: '/roster', label: 'Monthly Roster', icon: CalendarDays, badge: 'CP-SAT' },
         { to: '/coverage', label: 'Coverage Analysis', icon: BarChart3 },
         {
           to: '/conflicts',
           label: 'Conflicts Center',
           icon: AlertOctagon,
           badgeCount: unresolvedConflictsCount > 0 ? unresolvedConflictsCount : undefined,
-          badgeVariant: 'danger',
         },
       ],
     },
     {
-      group: 'Workforce & Organization',
+      group: 'Staff & Teams',
       items: [
         { to: '/employees', label: 'Employees', icon: Users },
         { to: '/pods', label: 'Operational Pods', icon: Network },
@@ -60,7 +61,7 @@ export const Sidebar: React.FC = () => {
       ],
     },
     {
-      group: 'Enterprise Configuration',
+      group: 'Accounts & Rules',
       items: [
         { to: '/brands', label: 'Client Brands', icon: Building2 },
         { to: '/processes', label: 'Processes', icon: Layers },
@@ -70,31 +71,45 @@ export const Sidebar: React.FC = () => {
   ];
 
   return (
-    <aside className="w-64 shrink-0 border-r border-slate-800/80 bg-slate-950 flex flex-col h-screen sticky top-0 select-none">
-      {/* Brand Header */}
-      <div className="p-5 border-b border-slate-800/80 flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 via-indigo-600 to-violet-700 flex items-center justify-center shadow-lg shadow-indigo-600/30 text-white font-black text-xl tracking-wider">
-          R
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-1.5">
-            <span className="font-bold text-slate-100 tracking-tight text-base">RosterIQ</span>
-            <span className="px-1.5 py-0.2 text-[9px] font-bold rounded bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">
-              PRO
+    <aside className="w-60 shrink-0 border-r border-[#D9D4C7] bg-[#FBF9F5] flex flex-col h-screen sticky top-0 select-none">
+      {/* Timetable Masthead */}
+      <div className="px-4 py-4 border-b border-[#D9D4C7] flex items-center justify-between">
+        <div className="flex items-center gap-2 min-w-0">
+          <svg
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            aria-hidden="true"
+            className="shrink-0"
+          >
+            <rect x="1" y="1" width="22" height="22" rx="2" fill="#F6F3EC" stroke="#1B1A17" strokeWidth="1.5" />
+            <rect x="1" y="1" width="22" height="6" fill="#1B1A17" />
+            <line x1="9" y1="7" x2="9" y2="23" stroke="#D9D4C7" strokeWidth="1.2" />
+            <line x1="16" y1="7" x2="16" y2="23" stroke="#D9D4C7" strokeWidth="1.2" />
+            <line x1="1" y1="13" x2="23" y2="13" stroke="#D9D4C7" strokeWidth="1.2" />
+            <rect x="3" y="9" width="4" height="2.5" fill="#164B78" />
+            <rect x="11" y="15" width="4" height="2.5" fill="#144836" />
+          </svg>
+          <div>
+            <span className="font-bold text-[#1B1A17] tracking-tight text-base block leading-none">
+              RosterIQ
+            </span>
+            <span className="font-mono text-[10px] text-[#57534A] uppercase tracking-wider mt-1 block">
+              Shift Timetable
             </span>
           </div>
-          <p className="text-[11px] text-slate-400 truncate mt-0.5">Workforce Optimization</p>
         </div>
       </div>
 
-      {/* Navigation */}
-      <div className="flex-1 overflow-y-auto px-3 py-4 space-y-6">
+      {/* Ruled Navigation */}
+      <div className="flex-1 overflow-y-auto px-2 py-4 space-y-6">
         {navGroups.map((group) => (
           <div key={group.group}>
-            <p className="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-2">
+            <p className="px-2 font-mono text-[10px] font-semibold uppercase tracking-wider text-[#57534A] mb-2">
               {group.group}
             </p>
-            <nav className="space-y-1">
+            <nav className="space-y-0.5" aria-label={group.group}>
               {group.items.map((item) => {
                 const Icon = item.icon;
                 return (
@@ -102,28 +117,29 @@ export const Sidebar: React.FC = () => {
                     key={item.to}
                     to={item.to}
                     end={item.to === '/'}
+                    onClick={onNavigate}
                     className={({ isActive }) =>
-                      `flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                      `flex items-center justify-between px-2 py-2 rounded-[4px] text-sm transition-colors border-l-2 ${
                         isActive
-                          ? 'bg-indigo-600/15 text-indigo-400 border border-indigo-500/30 shadow-sm'
-                          : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/80'
+                          ? 'border-[#164B78] bg-[#EDE8DC] text-[#164B78] font-semibold'
+                          : 'border-transparent text-[#1B1A17] hover:bg-[#EDE8DC]/60 font-normal'
                       }`
                     }
                   >
-                    <div className="flex items-center gap-2.5 truncate">
-                      <Icon className="w-4 h-4 shrink-0" />
+                    <div className="flex items-center gap-2 truncate">
+                      <Icon className="w-4 h-4 shrink-0 text-[#57534A]" />
                       <span className="truncate">{item.label}</span>
                     </div>
 
                     {item.badge && (
-                      <span className="px-1.5 py-0.5 text-[10px] font-semibold rounded bg-indigo-950 text-indigo-300 border border-indigo-800/60">
+                      <span className="px-1.5 py-0.5 font-mono text-[10px] font-medium rounded-[2px] bg-[#EDE8DC] text-[#57534A] border border-[#D9D4C7]">
                         {item.badge}
                       </span>
                     )}
 
                     {item.badgeCount !== undefined && (
-                      <span className="px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-rose-950 text-rose-300 border border-rose-800 animate-pulse">
-                        {item.badgeCount}
+                      <span className="px-1.5 py-0.5 font-mono text-[10px] font-semibold rounded-[2px] bg-[#FAE6E6] text-[#911D1D] border border-[#D67A7A] tabular-nums">
+                        ✕ {item.badgeCount}
                       </span>
                     )}
                   </NavLink>
@@ -134,26 +150,14 @@ export const Sidebar: React.FC = () => {
         ))}
       </div>
 
-      {/* Bottom Solver Badge / Info */}
-      <div className="p-4 border-t border-slate-800/80 bg-slate-900/40">
-        <div className="flex items-center gap-3 p-2.5 rounded-xl bg-slate-950/80 border border-slate-800">
-          <div className="w-8 h-8 rounded-lg bg-indigo-950/80 border border-indigo-700/50 flex items-center justify-center text-indigo-400">
-            <Cpu className="w-4 h-4" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-slate-200">CP-SAT Engine</span>
-              <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500" />
-            </div>
-            <p className="text-[10px] text-slate-400 truncate">Google OR-Tools 9.11</p>
-          </div>
+      {/* Solver Spec Footer */}
+      <div className="p-4 border-t border-[#D9D4C7] bg-[#F6F3EC]">
+        <div className="font-mono text-[11px] text-[#1B1A17] font-medium">
+          OR-Tools CP-SAT
         </div>
-
-        <div className="mt-2.5 text-center">
-          <p className="text-[10px] text-slate-400 tracking-wide">
-            DataStraw Assessment
-          </p>
-        </div>
+        <p className="text-[11px] text-[#57534A] mt-0.5">
+          40h/wk cap &middot; 8h/day &middot; 6 max days
+        </p>
       </div>
     </aside>
   );

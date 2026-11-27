@@ -1,26 +1,10 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import {
-  CalendarOff,
-  Calendar,
-  Plus,
-  CheckCircle2,
-  XCircle,
-  Clock,
-  Sparkles,
-  Search,
-  Filter,
-  Check,
-  X,
-  Trash2,
-  AlertTriangle,
-} from 'lucide-react';
-
+import React, { useState, useEffect } from 'react';
+import { Plus, Trash2 } from 'lucide-react';
 import { availabilityService } from '../../services/availabilityService';
 import { holidayService } from '../../services/holidayService';
 import { employeeService } from '../../services/employeeService';
 import { useToast } from '../../context/ToastContext';
 
-import { Card, CardHeader } from '../../components/common/Card';
 import { Button } from '../../components/common/Button';
 import { Badge } from '../../components/common/Badge';
 import { Modal } from '../../components/common/Modal';
@@ -39,22 +23,19 @@ import {
 } from '../../types';
 
 export const LeavesHolidaysPage: React.FC = () => {
-  const { showSuccess, showError, showInfo } = useToast();
+  const { showSuccess, showError } = useToast();
 
   const [activeTab, setActiveTab] = useState<'leaves' | 'holidays'>('leaves');
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  // Data
   const [availabilities, setAvailabilities] = useState<EmployeeAvailability[]>([]);
   const [holidays, setHolidays] = useState<PublicHoliday[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
 
-  // Modals state
   const [isAddLeaveModalOpen, setIsAddLeaveModalOpen] = useState<boolean>(false);
   const [isAddHolidayModalOpen, setIsAddHolidayModalOpen] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
-  // Leave Form
   const [leaveForm, setLeaveForm] = useState<EmployeeAvailabilityCreate>({
     employee_id: 0,
     date: new Date().toISOString().split('T')[0],
@@ -65,7 +46,6 @@ export const LeavesHolidaysPage: React.FC = () => {
     is_full_day: true,
   });
 
-  // Holiday Form
   const [holidayForm, setHolidayForm] = useState<PublicHolidayCreate>({
     name: '',
     date: new Date().toISOString().split('T')[0],
@@ -85,8 +65,9 @@ export const LeavesHolidaysPage: React.FC = () => {
       setAvailabilities(availList);
       setHolidays(holList);
       setEmployees(empList);
-    } catch (err: any) {
-      showError('Failed to load data', err.message);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Unable to fetch leaves & holidays';
+      showError('Failed to load data', message);
     } finally {
       setIsLoading(false);
     }
@@ -96,37 +77,36 @@ export const LeavesHolidaysPage: React.FC = () => {
     loadData();
   }, []);
 
-  // Update status of leave (Approve / Reject)
   const handleUpdateLeaveStatus = async (id: number, newStatus: ApprovalStatus) => {
     try {
       const updated = await availabilityService.update(id, { status: newStatus });
       setAvailabilities((prev) => prev.map((a) => (a.id === id ? updated : a)));
       showSuccess(
         `Leave ${newStatus}`,
-        `Availability record #${id} set to ${newStatus}. Note: Roster will revalidate on next solve.`
+        `Availability record #${id} set to ${newStatus}. Re-run solver to update roster.`
       );
-    } catch (err: any) {
-      showError('Status update failed', err.message);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Update failed';
+      showError('Status update failed', message);
     }
   };
 
-  // Submit Leave
   const handleSubmitLeave = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     try {
       const created = await availabilityService.create(leaveForm);
       setAvailabilities((prev) => [...prev, created]);
-      showSuccess('Leave Recorded', `Leave scheduled for employee #${created.employee_id}.`);
+      showSuccess('Leave Recorded', `Saved for employee #${created.employee_id}.`);
       setIsAddLeaveModalOpen(false);
-    } catch (err: any) {
-      showError('Failed to record leave', err.message);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Unable to save leave';
+      showError('Failed to record leave', message);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // Submit Holiday
   const handleSubmitHoliday = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -135,60 +115,56 @@ export const LeavesHolidaysPage: React.FC = () => {
       setHolidays((prev) => [...prev, created]);
       showSuccess('Public Holiday Added', `${created.name} (${created.date}) registered.`);
       setIsAddHolidayModalOpen(false);
-    } catch (err: any) {
-      showError('Failed to add holiday', err.message);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Unable to add holiday';
+      showError('Failed to add holiday', message);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // Delete Holiday
   const handleDeleteHoliday = async (id: number) => {
     if (!confirm('Remove this public holiday from the calendar?')) return;
     try {
       await holidayService.delete(id);
       setHolidays((prev) => prev.filter((h) => h.id !== id));
-      showSuccess('Holiday Removed', 'Holiday deleted from operating calendar.');
-    } catch (err: any) {
-      showError('Deletion failed', err.message);
+      showSuccess('Holiday Removed', 'Deleted from calendar.');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Delete failed';
+      showError('Deletion failed', message);
     }
   };
 
   if (isLoading) {
-    return <LoadingSpinner message="Loading leaves and public holidays calendar..." />;
+    return <LoadingSpinner message="Loading leaves and public holidays..." />;
   }
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-300">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-5">
+    <div className="space-y-6 max-w-[1440px]">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#D9D4C7] pb-4">
         <div>
-          <div className="flex items-center gap-2">
-            <h2 className="text-xl font-bold text-slate-100 tracking-tight">LEAVES & PUBLIC HOLIDAYS</h2>
-            <Badge variant="purple" size="xs">
-              Calendar Engine
-            </Badge>
-          </div>
-          <p className="text-xs text-slate-400 mt-1">
-            Manage planned employee leaves, comp-offs, and operating calendar holiday exceptions
+          <h2 className="text-xl font-bold text-[#1B1A17] tracking-tight">LEAVES &amp; PUBLIC HOLIDAYS</h2>
+          <p className="text-xs text-[#57534A] mt-1">
+            Approved staff leave, compensatory offs, and non-operating calendar holidays.
           </p>
         </div>
 
-        {/* Tab switcher & Action button */}
-        <div className="flex items-center gap-3">
-          <div className="flex items-center bg-slate-900 p-1 rounded-lg border border-slate-800 text-xs">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="inline-flex bg-[#FBF9F5] p-0.5 rounded-[4px] border border-[#D9D4C7] text-xs">
             <button
+              type="button"
               onClick={() => setActiveTab('leaves')}
-              className={`px-3 py-1.5 rounded-md font-semibold transition-all ${
-                activeTab === 'leaves' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'
+              className={`px-3 py-1.5 rounded-[2px] font-medium cursor-pointer ${
+                activeTab === 'leaves' ? 'bg-[#164B78] text-[#FBF9F5]' : 'text-[#57534A] hover:text-[#1B1A17]'
               }`}
             >
               Employee Leaves ({availabilities.length})
             </button>
             <button
+              type="button"
               onClick={() => setActiveTab('holidays')}
-              className={`px-3 py-1.5 rounded-md font-semibold transition-all ${
-                activeTab === 'holidays' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'
+              className={`px-3 py-1.5 rounded-[2px] font-medium cursor-pointer ${
+                activeTab === 'holidays' ? 'bg-[#164B78] text-[#FBF9F5]' : 'text-[#57534A] hover:text-[#1B1A17]'
               }`}
             >
               Public Holidays ({holidays.length})
@@ -223,7 +199,7 @@ export const LeavesHolidaysPage: React.FC = () => {
                 setHolidayForm({
                   name: '',
                   date: '2026-11-14',
-                  description: 'Diwali Festival of Lights',
+                  description: '',
                   is_optional: false,
                   applicable_region: 'ALL',
                 });
@@ -237,45 +213,56 @@ export const LeavesHolidaysPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Tab 1: Leaves & Availability Table */}
+      {/* Tab 1: Leaves Table */}
       {activeTab === 'leaves' && (
-        <Card>
+        <div className="border border-[#B8B1A1] bg-[#FBF9F5] rounded-[4px] overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs text-slate-300">
-              <thead className="border-b border-slate-800 bg-slate-950/80 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+            <table className="w-full text-left text-xs border-collapse tabular-nums">
+              <thead className="border-b border-[#B8B1A1] bg-[#EDE8DC] font-mono text-[11px] font-semibold uppercase tracking-wider text-[#57534A]">
                 <tr>
                   <th className="px-4 py-3">Employee</th>
                   <th className="px-4 py-3">Date</th>
                   <th className="px-4 py-3">Type</th>
-                  <th className="px-4 py-3">Reason / Details</th>
+                  <th className="px-4 py-3">Notes</th>
                   <th className="px-4 py-3 text-center">Status</th>
-                  <th className="px-4 py-3 text-right">Approval Actions</th>
+                  <th className="px-4 py-3 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/60">
+              <tbody className="divide-y divide-[#D9D4C7]">
                 {availabilities.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="py-12 text-center text-slate-500">
-                      No leave requests recorded.
+                    <td colSpan={6} className="py-10 text-center text-[#57534A]">
+                      No leave entries recorded.
                     </td>
                   </tr>
                 ) : (
                   availabilities.map((a) => (
-                    <tr key={a.id} className="hover:bg-slate-800/30 transition-colors">
-                      <td className="px-4 py-3 font-semibold text-slate-200">
+                    <tr key={a.id} className="hover:bg-[#EDE8DC]/40 transition-colors">
+                      <td className="px-4 py-3 font-semibold text-[#1B1A17]">
                         {a.employee_name || `Employee #${a.employee_id}`}
                       </td>
-                      <td className="px-4 py-3 font-mono text-slate-300">{a.date}</td>
+                      <td className="px-4 py-3 font-mono text-[#1B1A17]">{a.date}</td>
                       <td className="px-4 py-3">
-                        <Badge variant={a.availability_type === 'LEAVE' ? 'LEAVE' : 'COMP_OFF'} size="xs">
+                        <Badge
+                          variant={
+                            a.availability_type === 'LEAVE'
+                              ? 'LEAVE'
+                              : a.availability_type === 'COMP_OFF'
+                                ? 'COMP_OFF'
+                                : 'UNAVAILABLE'
+                          }
+                          size="xs"
+                          dot
+                        >
                           {a.leave_type || a.availability_type}
                         </Badge>
                       </td>
-                      <td className="px-4 py-3 text-slate-400">{a.reason || '-'}</td>
+                      <td className="px-4 py-3 text-[#57534A]">{a.reason || '—'}</td>
                       <td className="px-4 py-3 text-center">
                         <Badge
                           variant={a.status === 'APPROVED' ? 'success' : a.status === 'PENDING' ? 'warning' : 'danger'}
                           size="xs"
+                          dot
                         >
                           {a.status}
                         </Badge>
@@ -287,7 +274,7 @@ export const LeavesHolidaysPage: React.FC = () => {
                               size="sm"
                               variant="outline"
                               onClick={() => handleUpdateLeaveStatus(a.id, 'APPROVED')}
-                              className="text-xs py-1 px-2 text-emerald-400 hover:text-emerald-300"
+                              className="text-xs py-1 px-2 text-[#144836]"
                             >
                               Approve
                             </Button>
@@ -297,7 +284,7 @@ export const LeavesHolidaysPage: React.FC = () => {
                               size="sm"
                               variant="outline"
                               onClick={() => handleUpdateLeaveStatus(a.id, 'REJECTED')}
-                              className="text-xs py-1 px-2 text-rose-400 hover:text-rose-300"
+                              className="text-xs py-1 px-2 text-[#911D1D]"
                             >
                               Reject
                             </Button>
@@ -310,40 +297,40 @@ export const LeavesHolidaysPage: React.FC = () => {
               </tbody>
             </table>
           </div>
-        </Card>
+        </div>
       )}
 
-      {/* Tab 2: Public Holidays Table */}
+      {/* Tab 2: Holidays Table */}
       {activeTab === 'holidays' && (
-        <Card>
+        <div className="border border-[#B8B1A1] bg-[#FBF9F5] rounded-[4px] overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs text-slate-300">
-              <thead className="border-b border-slate-800 bg-slate-950/80 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+            <table className="w-full text-left text-xs border-collapse tabular-nums">
+              <thead className="border-b border-[#B8B1A1] bg-[#EDE8DC] font-mono text-[11px] font-semibold uppercase tracking-wider text-[#57534A]">
                 <tr>
                   <th className="px-4 py-3">Holiday Name</th>
                   <th className="px-4 py-3">Date</th>
                   <th className="px-4 py-3">Description</th>
                   <th className="px-4 py-3">Region</th>
-                  <th className="px-4 py-3 text-center">Optional</th>
-                  <th className="px-4 py-3 text-right">Action</th>
+                  <th className="px-4 py-3 text-center">Rule</th>
+                  <th className="px-4 py-3 text-right">Delete</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/60">
+              <tbody className="divide-y divide-[#D9D4C7]">
                 {holidays.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="py-12 text-center text-slate-500">
+                    <td colSpan={6} className="py-10 text-center text-[#57534A]">
                       No public holidays configured.
                     </td>
                   </tr>
                 ) : (
                   holidays.map((h) => (
-                    <tr key={h.id} className="hover:bg-slate-800/30 transition-colors">
-                      <td className="px-4 py-3 font-semibold text-slate-200">{h.name}</td>
-                      <td className="px-4 py-3 font-mono text-indigo-400 font-medium">{h.date}</td>
-                      <td className="px-4 py-3 text-slate-400">{h.description || '-'}</td>
-                      <td className="px-4 py-3 font-mono text-slate-400">{h.applicable_region}</td>
+                    <tr key={h.id} className="hover:bg-[#EDE8DC]/40 transition-colors">
+                      <td className="px-4 py-3 font-semibold text-[#1B1A17]">{h.name}</td>
+                      <td className="px-4 py-3 font-mono text-[#164B78] font-medium">{h.date}</td>
+                      <td className="px-4 py-3 text-[#57534A]">{h.description || '—'}</td>
+                      <td className="px-4 py-3 font-mono text-[#57534A]">{h.applicable_region}</td>
                       <td className="px-4 py-3 text-center">
-                        <Badge variant={h.is_optional ? 'default' : 'purple'} size="xs">
+                        <Badge variant={h.is_optional ? 'default' : 'info'} size="xs">
                           {h.is_optional ? 'Optional' : 'Mandatory'}
                         </Badge>
                       </td>
@@ -352,7 +339,7 @@ export const LeavesHolidaysPage: React.FC = () => {
                           size="sm"
                           variant="ghost"
                           onClick={() => handleDeleteHoliday(h.id)}
-                          className="p-1.5 h-auto text-rose-400 hover:text-rose-300"
+                          className="p-1.5 h-auto text-[#911D1D]"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </Button>
@@ -363,21 +350,21 @@ export const LeavesHolidaysPage: React.FC = () => {
               </tbody>
             </table>
           </div>
-        </Card>
+        </div>
       )}
 
-      {/* Record Leave Modal */}
+      {/* Leave Modal */}
       {isAddLeaveModalOpen && (
         <Modal
           isOpen={true}
           onClose={() => setIsAddLeaveModalOpen(false)}
           title="Record Planned Leave / Comp-Off"
-          subtitle="Register an employee rest date that restricts solver shift assignments"
+          subtitle="Exclude employee from shift scheduling on the selected date"
           maxWidth="md"
         >
           <form onSubmit={handleSubmitLeave} className="space-y-4">
             <Select
-              label="Select Employee"
+              label="Employee"
               required
               value={leaveForm.employee_id}
               onChange={(e) => setLeaveForm({ ...leaveForm, employee_id: Number(e.target.value) })}
@@ -411,17 +398,17 @@ export const LeavesHolidaysPage: React.FC = () => {
               label="Leave Type Code"
               value={leaveForm.leave_type || ''}
               onChange={(e) => setLeaveForm({ ...leaveForm, leave_type: e.target.value })}
-              placeholder="PLANNED_LEAVE / SICK_LEAVE / COMP_OFF"
+              placeholder="PLANNED_LEAVE"
             />
 
             <Input
               label="Reason (Optional)"
               value={leaveForm.reason || ''}
               onChange={(e) => setLeaveForm({ ...leaveForm, reason: e.target.value })}
-              placeholder="Medical appointment / family function"
+              placeholder="Medical appointment / personal leave"
             />
 
-            <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-slate-800">
+            <div className="flex items-center justify-end gap-2 pt-4 border-t border-[#D9D4C7]">
               <Button type="button" variant="outline" size="sm" onClick={() => setIsAddLeaveModalOpen(false)}>
                 Cancel
               </Button>
@@ -433,13 +420,13 @@ export const LeavesHolidaysPage: React.FC = () => {
         </Modal>
       )}
 
-      {/* Add Holiday Modal */}
+      {/* Holiday Modal */}
       {isAddHolidayModalOpen && (
         <Modal
           isOpen={true}
           onClose={() => setIsAddHolidayModalOpen(false)}
           title="Add Public Holiday"
-          subtitle="Declare a public holiday for operating calendar evaluation"
+          subtitle="Register a date evaluated by EXCEPT_PUBLIC_HOLIDAYS brand rules"
           maxWidth="md"
         >
           <form onSubmit={handleSubmitHoliday} className="space-y-4">
@@ -464,7 +451,7 @@ export const LeavesHolidaysPage: React.FC = () => {
               label="Description (Optional)"
               value={holidayForm.description || ''}
               onChange={(e) => setHolidayForm({ ...holidayForm, description: e.target.value })}
-              placeholder="National festival of lights"
+              placeholder="National holiday"
             />
 
             <div className="flex items-center gap-2 pt-2">
@@ -473,14 +460,14 @@ export const LeavesHolidaysPage: React.FC = () => {
                 id="isOpt"
                 checked={holidayForm.is_optional}
                 onChange={(e) => setHolidayForm({ ...holidayForm, is_optional: e.target.checked })}
-                className="rounded border-slate-700 bg-slate-900 text-indigo-600 focus:ring-indigo-500"
+                className="rounded-[2px] border-[#B8B1A1]"
               />
-              <label htmlFor="isOpt" className="text-xs text-slate-300 font-medium cursor-pointer">
+              <label htmlFor="isOpt" className="text-xs text-[#1B1A17] font-medium cursor-pointer">
                 Optional / Restricted Holiday
               </label>
             </div>
 
-            <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-slate-800">
+            <div className="flex items-center justify-end gap-2 pt-4 border-t border-[#D9D4C7]">
               <Button type="button" variant="outline" size="sm" onClick={() => setIsAddHolidayModalOpen(false)}>
                 Cancel
               </Button>

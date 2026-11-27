@@ -7,16 +7,13 @@ interface LoadingSpinnerProps {
 }
 
 export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
-  message = 'Loading data...',
+  message = 'Loading schedule data...',
   className = '',
 }) => {
   return (
-    <div className={`flex flex-col items-center justify-center p-12 text-center ${className}`}>
-      <div className="relative">
-        <Loader2 className="w-10 h-10 animate-spin text-indigo-500" />
-        <div className="absolute inset-0 rounded-full blur-md bg-indigo-500/20" />
-      </div>
-      {message && <p className="text-sm font-medium text-slate-400 mt-4">{message}</p>}
+    <div className={`flex items-center gap-3 p-8 text-left border border-[#D9D4C7] rounded-[4px] bg-[#FBF9F5] ${className}`}>
+      <Loader2 className="w-4 h-4 animate-spin motion-reduce:animate-none text-[#164B78] shrink-0" />
+      {message && <p className="text-sm font-medium text-[#57534A]">{message}</p>}
     </div>
   );
 };

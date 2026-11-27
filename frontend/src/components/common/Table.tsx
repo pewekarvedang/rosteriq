@@ -7,8 +7,8 @@ interface TableProps {
 
 export const Table: React.FC<TableProps> = ({ children, className = '' }) => {
   return (
-    <div className="w-full overflow-x-auto rounded-xl border border-slate-800/80 bg-slate-900/50">
-      <table className={`w-full text-left text-sm text-slate-300 ${className}`}>
+    <div className="w-full overflow-x-auto rounded-[4px] border border-[#D9D4C7] bg-[#FBF9F5]">
+      <table className={`w-full text-left text-xs text-[#1B1A17] border-collapse tabular-nums ${className}`}>
         {children}
       </table>
     </div>
@@ -20,7 +20,9 @@ export const TableHeader: React.FC<{ children: React.ReactNode; className?: stri
   className = '',
 }) => {
   return (
-    <thead className={`border-b border-slate-800 bg-slate-900/90 text-xs uppercase font-semibold text-slate-400 tracking-wider ${className}`}>
+    <thead
+      className={`border-b border-[#B8B1A1] bg-[#EDE8DC] text-[11px] uppercase font-semibold text-[#57534A] tracking-wider ${className}`}
+    >
       {children}
     </thead>
   );
@@ -30,11 +32,7 @@ export const TableBody: React.FC<{ children: React.ReactNode; className?: string
   children,
   className = '',
 }) => {
-  return (
-    <tbody className={`divide-y divide-slate-800/60 ${className}`}>
-      {children}
-    </tbody>
-  );
+  return <tbody className={`divide-y divide-[#D9D4C7] ${className}`}>{children}</tbody>;
 };
 
 export const TableRow: React.FC<{
@@ -45,9 +43,7 @@ export const TableRow: React.FC<{
   return (
     <tr
       onClick={onClick}
-      className={`transition-colors hover:bg-slate-800/40 ${
-        onClick ? 'cursor-pointer' : ''
-      } ${className}`}
+      className={`transition-colors hover:bg-[#EDE8DC]/60 ${onClick ? 'cursor-pointer' : ''} ${className}`}
     >
       {children}
     </tr>
@@ -58,12 +54,12 @@ export const TableHead: React.FC<{
   children: React.ReactNode;
   className?: string;
 }> = ({ children, className = '' }) => {
-  return <th className={`px-4 py-3.5 ${className}`}>{children}</th>;
+  return <th className={`px-4 py-2.5 ${className}`}>{children}</th>;
 };
 
 export const TableCell: React.FC<{
   children: React.ReactNode;
   className?: string;
 }> = ({ children, className = '' }) => {
-  return <td className={`px-4 py-3 align-middle ${className}`}>{children}</td>;
+  return <td className={`px-4 py-2.5 align-middle ${className}`}>{children}</td>;
 };

@@ -27,15 +27,18 @@ export const ToastProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     setToasts((prev) => prev.filter((t) => t.id !== id));
   }, []);
 
-  const showToast = useCallback((type: ToastType, title: string, message?: string) => {
-    const id = Math.random().toString(36).substring(2, 9);
-    const newToast: Toast = { id, type, title, message };
-    setToasts((prev) => [...prev, newToast]);
+  const showToast = useCallback(
+    (type: ToastType, title: string, message?: string) => {
+      const id = Math.random().toString(36).substring(2, 9);
+      const newToast: Toast = { id, type, title, message };
+      setToasts((prev) => [...prev, newToast]);
 
-    setTimeout(() => {
-      removeToast(id);
-    }, 4500);
-  }, [removeToast]);
+      setTimeout(() => {
+        removeToast(id);
+      }, 4500);
+    },
+    [removeToast]
+  );
 
   const showSuccess = useCallback((title: string, message?: string) => showToast('success', title, message), [showToast]);
   const showError = useCallback((title: string, message?: string) => showToast('error', title, message), [showToast]);
@@ -45,13 +48,13 @@ export const ToastProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   return (
     <ToastContext.Provider value={{ showToast, showSuccess, showError, showWarning, showInfo }}>
       {children}
-      <div className="fixed bottom-5 right-5 z-50 flex flex-col gap-2 max-w-md w-full pointer-events-none">
+      <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-md w-full pointer-events-none px-4 sm:px-0">
         {toasts.map((toast) => {
-          const bgColors = {
-            success: 'bg-emerald-950/90 border-emerald-500/40 text-emerald-100',
-            error: 'bg-rose-950/90 border-rose-500/40 text-rose-100',
-            warning: 'bg-amber-950/90 border-amber-500/40 text-amber-100',
-            info: 'bg-slate-900/90 border-indigo-500/40 text-slate-100',
+          const styles = {
+            success: 'bg-[#E5EFEA] border-[#144836] text-[#144836]',
+            error: 'bg-[#FAE6E6] border-[#911D1D] text-[#911D1D]',
+            warning: 'bg-[#FBF1DC] border-[#784300] text-[#784300]',
+            info: 'bg-[#FBF9F5] border-[#164B78] text-[#1B1A17]',
           }[toast.type];
 
           const Icon = {
@@ -61,26 +64,21 @@ export const ToastProvider: React.FC<{ children: ReactNode }> = ({ children }) =
             info: Info,
           }[toast.type];
 
-          const iconColor = {
-            success: 'text-emerald-400',
-            error: 'text-rose-400',
-            warning: 'text-amber-400',
-            info: 'text-indigo-400',
-          }[toast.type];
-
           return (
             <div
               key={toast.id}
-              className={`pointer-events-auto flex items-start gap-3 p-4 rounded-xl border shadow-2xl backdrop-blur-md transition-all duration-300 animate-in fade-in slide-in-from-bottom-5 ${bgColors}`}
+              role="status"
+              className={`pointer-events-auto flex items-start gap-3 p-4 rounded-[4px] border border-l-4 ${styles}`}
             >
-              <Icon className={`w-5 h-5 shrink-0 mt-0.5 ${iconColor}`} />
+              <Icon className="w-4 h-4 shrink-0 mt-0.5" />
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold">{toast.title}</p>
-                {toast.message && <p className="text-xs opacity-80 mt-1 leading-relaxed">{toast.message}</p>}
+                {toast.message && <p className="text-xs mt-1 leading-relaxed opacity-90">{toast.message}</p>}
               </div>
               <button
                 onClick={() => removeToast(toast.id)}
-                className="shrink-0 p-1 rounded-md opacity-60 hover:opacity-100 transition-opacity"
+                aria-label="Dismiss notification"
+                className="shrink-0 p-1 rounded-[4px] opacity-70 hover:opacity-100 cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>

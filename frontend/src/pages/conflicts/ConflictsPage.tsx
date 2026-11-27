@@ -1,31 +1,16 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import {
-  AlertOctagon,
-  AlertTriangle,
-  CheckCircle2,
-  Filter,
-  ShieldCheck,
-  RefreshCw,
-  Search,
-  Check,
-  X,
-  ExternalLink,
-} from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-
+import { RefreshCw, ShieldCheck, Search, Check, X } from 'lucide-react';
 import { conflictService } from '../../services/conflictService';
 import { rosterService } from '../../services/rosterService';
 import { useRoster } from '../../context/RosterContext';
 import { useToast } from '../../context/ToastContext';
 
-import { Card, CardHeader } from '../../components/common/Card';
 import { Button } from '../../components/common/Button';
 import { Badge } from '../../components/common/Badge';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { SchedulingConflict } from '../../types';
 
 export const ConflictsPage: React.FC = () => {
-  const navigate = useNavigate();
   const { generationResult } = useRoster();
   const { showSuccess, showError, showInfo } = useToast();
 
@@ -41,8 +26,9 @@ export const ConflictsPage: React.FC = () => {
     try {
       const data = await conflictService.getAll();
       setConflicts(data);
-    } catch (err: any) {
-      showError('Failed to load conflicts', err.message);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Unable to fetch conflicts';
+      showError('Failed to load conflicts', message);
     } finally {
       setIsLoading(false);
     }
@@ -57,17 +43,18 @@ export const ConflictsPage: React.FC = () => {
       const updated = await conflictService.resolve(conflict.id, !conflict.is_resolved);
       setConflicts((prev) => prev.map((c) => (c.id === conflict.id ? updated : c)));
       showSuccess(
-        updated.is_resolved ? 'Conflict Marked Resolved' : 'Conflict Re-opened',
-        `Violation #${conflict.id} is now ${updated.is_resolved ? 'resolved' : 'active'}.`
+        updated.is_resolved ? 'Conflict Resolved' : 'Conflict Re-opened',
+        `Entry #${conflict.id} marked ${updated.is_resolved ? 'resolved' : 'active'}.`
       );
-    } catch (err: any) {
-      showError('Error updating conflict', err.message);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Update failed';
+      showError('Error updating conflict', message);
     }
   };
 
   const handleTriggerRevalidation = async () => {
     if (!generationResult?.roster_id) {
-      showInfo('Revalidation Notice', 'Please load or generate an active roster to revalidate.');
+      showInfo('Validation Notice', 'Generate or load a roster first to run revalidation.');
       return;
     }
     setIsValidating(true);
@@ -75,12 +62,13 @@ export const ConflictsPage: React.FC = () => {
       const res = await rosterService.validate(generationResult.roster_id);
       await loadConflicts();
       if (res.is_valid) {
-        showSuccess('Roster In Full Compliance', 'All hard constraints successfully satisfied.');
+        showSuccess('Schedule Valid', 'All constraints pass with zero open clashes.');
       } else {
-        showInfo('Revalidation Audit Complete', `Detected ${res.total_conflicts} remaining violation(s).`);
+        showInfo('Audit Complete', `Detected ${res.total_conflicts} conflict(s).`);
       }
-    } catch (err: any) {
-      showError('Revalidation failed', err.message);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Revalidation failed';
+      showError('Revalidation failed', message);
     } finally {
       setIsValidating(false);
     }
@@ -88,61 +76,64 @@ export const ConflictsPage: React.FC = () => {
 
   const filteredConflicts = useMemo(() => {
     return conflicts.filter((c) => {
-      // Resolved filter
       if (resolvedFilter === 'unresolved' && c.is_resolved) return false;
       if (resolvedFilter === 'resolved' && !c.is_resolved) return false;
-
-      // Severity filter
       if (severityFilter !== 'all' && c.severity !== severityFilter) return false;
 
-      // Search query
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
-        const matchesDesc = c.description.toLowerCase().includes(q);
-        const matchesType = c.conflict_type.toLowerCase().includes(q);
-        const matchesEmp = c.employee_name?.toLowerCase().includes(q);
-        const matchesBrand = c.brand_name?.toLowerCase().includes(q);
-        return matchesDesc || matchesType || matchesEmp || matchesBrand;
+        return (
+          c.description.toLowerCase().includes(q) ||
+          c.conflict_type.toLowerCase().includes(q) ||
+          Boolean(c.employee_name?.toLowerCase().includes(q)) ||
+          Boolean(c.brand_name?.toLowerCase().includes(q))
+        );
       }
-
       return true;
     });
   }, [conflicts, resolvedFilter, severityFilter, searchQuery]);
 
-  const criticalCount = useMemo(() => conflicts.filter((c) => !c.is_resolved && c.severity === 'CRITICAL').length, [conflicts]);
-  const warningCount = useMemo(() => conflicts.filter((c) => !c.is_resolved && c.severity === 'WARNING').length, [conflicts]);
-  const infoCount = useMemo(() => conflicts.filter((c) => !c.is_resolved && c.severity === 'INFO').length, [conflicts]);
+  const criticalCount = useMemo(
+    () => conflicts.filter((c) => !c.is_resolved && c.severity === 'CRITICAL').length,
+    [conflicts]
+  );
+  const warningCount = useMemo(
+    () => conflicts.filter((c) => !c.is_resolved && c.severity === 'WARNING').length,
+    [conflicts]
+  );
+  const infoCount = useMemo(
+    () => conflicts.filter((c) => !c.is_resolved && c.severity === 'INFO').length,
+    [conflicts]
+  );
 
   if (isLoading) {
-    return <LoadingSpinner message="Auditing roster violations & constraint logs..." />;
+    return <LoadingSpinner message="Checking schedule conflicts..." />;
   }
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-300">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-5">
+    <div className="space-y-6 max-w-[1440px]">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#D9D4C7] pb-4">
         <div>
           <div className="flex items-center gap-2">
-            <h2 className="text-xl font-bold text-slate-100 tracking-tight">SCHEDULING CONFLICTS CENTER</h2>
-            <Badge variant={criticalCount > 0 ? 'CRITICAL' : 'success'} size="xs">
-              {criticalCount > 0 ? `${criticalCount} Critical` : 'No Critical'}
+            <h2 className="text-xl font-bold text-[#1B1A17] tracking-tight">SCHEDULING CONFLICTS CENTER</h2>
+            <Badge variant={criticalCount > 0 ? 'CRITICAL' : 'success'} size="xs" dot>
+              {criticalCount > 0 ? `${criticalCount} Critical` : '0 Critical'}
             </Badge>
           </div>
-          <p className="text-xs text-slate-400 mt-1">
-            Deterministic rule violation log, weekly-off audits, leave clashes & solver diagnosis
+          <p className="text-xs text-[#57534A] mt-1">
+            Audit overlapping shifts, weekly-off misses, and leave overlaps before publishing.
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2">
           <Button
             variant="outline"
             size="sm"
             onClick={loadConflicts}
-            leftIcon={<RefreshCw className="w-3.5 h-3.5 text-slate-400" />}
+            leftIcon={<RefreshCw className="w-3.5 h-3.5" />}
           >
             Refresh
           </Button>
-
           <Button
             variant="primary"
             size="sm"
@@ -155,87 +146,89 @@ export const ConflictsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Severity Counters */}
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-        <Card
-          hoverEffect
-          onClick={() => { setResolvedFilter('unresolved'); setSeverityFilter('CRITICAL'); }}
-          className="p-4 border-rose-900/40 bg-slate-900/60"
+      {/* Ruled Severity Strip */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 border border-[#D9D4C7] bg-[#FBF9F5] rounded-[4px] divide-y sm:divide-y-0 sm:divide-x divide-[#D9D4C7] tabular-nums">
+        <button
+          type="button"
+          onClick={() => {
+            setResolvedFilter('unresolved');
+            setSeverityFilter('CRITICAL');
+          }}
+          className="p-4 text-left hover:bg-[#EDE8DC]/60 cursor-pointer"
         >
-          <span className="text-xs font-semibold uppercase text-rose-400">Critical Violations</span>
-          <div className="text-2xl font-bold text-rose-400 mt-1">{criticalCount}</div>
-          <p className="text-[11px] text-slate-500 mt-0.5">Overlapping shifts & unapproved work</p>
-        </Card>
+          <span className="font-mono text-[11px] font-semibold uppercase text-[#911D1D]">✕ Critical</span>
+          <div className="text-2xl font-bold font-mono text-[#911D1D] mt-1">{criticalCount}</div>
+          <p className="text-xs text-[#57534A]">Overlaps &amp; leave breaches</p>
+        </button>
 
-        <Card
-          hoverEffect
-          onClick={() => { setResolvedFilter('unresolved'); setSeverityFilter('WARNING'); }}
-          className="p-4 border-amber-900/40 bg-slate-900/60"
+        <button
+          type="button"
+          onClick={() => {
+            setResolvedFilter('unresolved');
+            setSeverityFilter('WARNING');
+          }}
+          className="p-4 text-left hover:bg-[#EDE8DC]/60 cursor-pointer"
         >
-          <span className="text-xs font-semibold uppercase text-amber-400">Warnings</span>
-          <div className="text-2xl font-bold text-amber-400 mt-1">{warningCount}</div>
-          <p className="text-[11px] text-slate-500 mt-0.5">Hours thresholds & preferred offs</p>
-        </Card>
+          <span className="font-mono text-[11px] font-semibold uppercase text-[#784300]">△ Warnings</span>
+          <div className="text-2xl font-bold font-mono text-[#784300] mt-1">{warningCount}</div>
+          <p className="text-xs text-[#57534A]">Hour caps &amp; preferred offs</p>
+        </button>
 
-        <Card
-          hoverEffect
-          onClick={() => { setResolvedFilter('unresolved'); setSeverityFilter('INFO'); }}
-          className="p-4 border-sky-900/40 bg-slate-900/60"
+        <button
+          type="button"
+          onClick={() => {
+            setResolvedFilter('unresolved');
+            setSeverityFilter('INFO');
+          }}
+          className="p-4 text-left hover:bg-[#EDE8DC]/60 cursor-pointer"
         >
-          <span className="text-xs font-semibold uppercase text-sky-400">Information</span>
-          <div className="text-2xl font-bold text-sky-400 mt-1">{infoCount}</div>
-          <p className="text-[11px] text-slate-500 mt-0.5">Operating calendar exceptions</p>
-        </Card>
+          <span className="font-mono text-[11px] font-semibold uppercase text-[#164B78]">◆ Notices</span>
+          <div className="text-2xl font-bold font-mono text-[#164B78] mt-1">{infoCount}</div>
+          <p className="text-xs text-[#57534A]">Calendar exceptions</p>
+        </button>
 
-        <Card
-          hoverEffect
-          onClick={() => { setResolvedFilter('resolved'); setSeverityFilter('all'); }}
-          className="p-4 border-emerald-900/40 bg-slate-900/60"
+        <button
+          type="button"
+          onClick={() => {
+            setResolvedFilter('resolved');
+            setSeverityFilter('all');
+          }}
+          className="p-4 text-left hover:bg-[#EDE8DC]/60 cursor-pointer"
         >
-          <span className="text-xs font-semibold uppercase text-emerald-400">Resolved Audit Items</span>
-          <div className="text-2xl font-bold text-emerald-400 mt-1">
+          <span className="font-mono text-[11px] font-semibold uppercase text-[#144836]">✓ Resolved</span>
+          <div className="text-2xl font-bold font-mono text-[#144836] mt-1">
             {conflicts.filter((c) => c.is_resolved).length}
           </div>
-          <p className="text-[11px] text-slate-500 mt-0.5">Resolved by manual overrides</p>
-        </Card>
+          <p className="text-xs text-[#57534A]">Signed off entries</p>
+        </button>
       </div>
 
-      {/* Filter and Search Bar */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-slate-900/80 p-3 rounded-xl border border-slate-800">
-        <div className="flex items-center gap-2">
-          {/* Status filter */}
-          <div className="flex items-center bg-slate-950 p-1 rounded-lg border border-slate-800 text-xs">
-            <button
-              onClick={() => setResolvedFilter('unresolved')}
-              className={`px-3 py-1 rounded-md font-semibold transition-colors ${
-                resolvedFilter === 'unresolved' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              Active ({conflicts.filter((c) => !c.is_resolved).length})
-            </button>
-            <button
-              onClick={() => setResolvedFilter('resolved')}
-              className={`px-3 py-1 rounded-md font-semibold transition-colors ${
-                resolvedFilter === 'resolved' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              Resolved ({conflicts.filter((c) => c.is_resolved).length})
-            </button>
-            <button
-              onClick={() => setResolvedFilter('all')}
-              className={`px-3 py-1 rounded-md font-semibold transition-colors ${
-                resolvedFilter === 'all' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              All ({conflicts.length})
-            </button>
+      {/* Filters */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-[#FBF9F5] p-3 rounded-[4px] border border-[#D9D4C7]">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="inline-flex bg-[#F6F3EC] p-0.5 rounded-[4px] border border-[#D9D4C7] text-xs">
+            {(['unresolved', 'resolved', 'all'] as const).map((status) => (
+              <button
+                key={status}
+                type="button"
+                onClick={() => setResolvedFilter(status)}
+                className={`px-3 py-1 rounded-[2px] font-medium cursor-pointer ${
+                  resolvedFilter === status ? 'bg-[#164B78] text-[#FBF9F5]' : 'text-[#57534A] hover:text-[#1B1A17]'
+                }`}
+              >
+                {status === 'unresolved'
+                  ? `Active (${conflicts.filter((c) => !c.is_resolved).length})`
+                  : status === 'resolved'
+                    ? `Resolved (${conflicts.filter((c) => c.is_resolved).length})`
+                    : `All (${conflicts.length})`}
+              </button>
+            ))}
           </div>
 
-          {/* Severity Dropdown */}
           <select
             value={severityFilter}
             onChange={(e) => setSeverityFilter(e.target.value)}
-            className="bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none"
+            className="bg-[#FBF9F5] border border-[#D9D4C7] rounded-[4px] px-3 py-1.5 text-xs text-[#1B1A17]"
           >
             <option value="all">All Severities</option>
             <option value="CRITICAL">Critical Only</option>
@@ -244,69 +237,69 @@ export const ConflictsPage: React.FC = () => {
           </select>
         </div>
 
-        {/* Search */}
         <div className="relative">
-          <Search className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-2.5 pointer-events-none" />
+          <Search className="w-3.5 h-3.5 text-[#57534A] absolute left-3 top-2 pointer-events-none" />
           <input
             type="text"
-            placeholder="Search description, employee..."
+            placeholder="Search employee or description..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="bg-slate-950 border border-slate-800 rounded-lg pl-9 pr-3 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500 w-64"
+            className="bg-[#FBF9F5] border border-[#D9D4C7] rounded-[4px] pl-8 pr-3 py-1.5 text-xs text-[#1B1A17] placeholder-[#57534A]/70 w-full sm:w-64"
           />
         </div>
       </div>
 
-      {/* Conflicts List */}
-      <Card>
+      {/* Conflict Log */}
+      <div className="border border-[#D9D4C7] bg-[#FBF9F5] rounded-[4px]">
         {filteredConflicts.length === 0 ? (
-          <div className="p-12 text-center text-slate-500 text-sm">
-            <CheckCircle2 className="w-10 h-10 text-emerald-400 mx-auto mb-3" />
-            <p className="font-semibold text-slate-300">No conflicts match your filter criteria.</p>
-            <p className="text-xs text-slate-500 mt-1">The workforce schedule is currently free of these issues.</p>
+          <div className="p-8 text-left border-l-4 border-[#144836] bg-[#E5EFEA]/40">
+            <p className="text-sm font-semibold text-[#144836]">✓ No matching conflicts found</p>
+            <p className="text-xs text-[#57534A] mt-1">
+              Selected schedule filters show zero unresolved clashes.
+            </p>
           </div>
         ) : (
-          <div className="divide-y divide-slate-800/60">
+          <div className="divide-y divide-[#D9D4C7]">
             {filteredConflicts.map((c) => (
               <div
                 key={c.id}
-                className="p-4 hover:bg-slate-800/30 transition-colors flex flex-col md:flex-row md:items-center justify-between gap-4"
+                className="p-4 hover:bg-[#EDE8DC]/40 transition-colors flex flex-col md:flex-row md:items-center justify-between gap-4"
               >
                 <div className="space-y-1.5 flex-1 min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
-                    <Badge variant={c.severity} size="xs">
+                    <Badge variant={c.severity} size="xs" dot>
                       {c.severity}
                     </Badge>
-                    <span className="font-bold text-slate-200 text-sm">{c.conflict_type}</span>
-                    <span className="text-xs font-mono text-slate-400">&bull; {c.date}</span>
+                    <span className="font-bold text-[#1B1A17] text-sm">{c.conflict_type}</span>
+                    <span className="text-xs font-mono text-[#57534A]">&middot; {c.date}</span>
                     {c.employee_name && (
-                      <span className="text-xs font-semibold text-indigo-400 bg-indigo-950/60 px-2 py-0.5 rounded border border-indigo-800/40">
+                      <Badge variant="info" size="xs">
                         {c.employee_name}
-                      </span>
+                      </Badge>
                     )}
                     {c.brand_name && (
-                      <span className="text-xs text-slate-400 bg-slate-900 px-2 py-0.5 rounded border border-slate-800">
+                      <Badge variant="outline" size="xs">
                         {c.brand_name}
-                      </span>
+                      </Badge>
                     )}
                   </div>
 
-                  <p className="text-xs text-slate-300 leading-relaxed">{c.description}</p>
+                  <p className="text-xs text-[#1B1A17] leading-relaxed">{c.description}</p>
 
                   {c.resolution_suggestion && (
-                    <div className="text-xs text-emerald-400/90 flex items-center gap-1.5 bg-emerald-950/30 p-2 rounded-lg border border-emerald-900/30">
-                      <span className="font-semibold text-emerald-300">Recommended Resolution:</span>
+                    <div className="text-xs text-[#144836] bg-[#E5EFEA] px-2.5 py-1.5 rounded-[4px] border border-[#8EB8A6]">
+                      <span className="font-semibold">Suggested fix: </span>
                       <span>{c.resolution_suggestion}</span>
                     </div>
                   )}
                 </div>
 
-                <div className="flex items-center gap-2 shrink-0">
+                <div className="shrink-0">
                   <Button
                     size="sm"
                     variant={c.is_resolved ? 'outline' : 'secondary'}
                     onClick={() => handleToggleResolve(c)}
-                    leftIcon={c.is_resolved ? <X className="w-3.5 h-3.5 text-slate-400" /> : <Check className="w-3.5 h-3.5 text-emerald-400" />}
+                    leftIcon={c.is_resolved ? <X className="w-3.5 h-3.5" /> : <Check className="w-3.5 h-3.5" />}
                   >
                     {c.is_resolved ? 'Re-open' : 'Mark Resolved'}
                   </Button>
@@ -315,7 +308,7 @@ export const ConflictsPage: React.FC = () => {
             ))}
           </div>
         )}
-      </Card>
+      </div>
     </div>
   );
 };

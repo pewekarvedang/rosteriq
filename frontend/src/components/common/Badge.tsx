@@ -6,7 +6,6 @@ export type BadgeVariant =
   | 'warning'
   | 'danger'
   | 'info'
-  | 'purple'
   | 'outline'
   | 'WORKING'
   | 'WEEKLY_OFF'
@@ -37,93 +36,89 @@ export const Badge: React.FC<BadgeProps> = ({
   dot = false,
 }) => {
   const sizeClasses = {
-    xs: 'px-1.5 py-0.5 text-[10px] font-medium tracking-tight',
+    xs: 'px-1.5 py-0.5 text-[11px] font-medium tracking-tight',
     sm: 'px-2 py-0.5 text-xs font-medium',
-    md: 'px-2.5 py-1 text-sm font-medium',
+    md: 'px-2.5 py-1 text-xs font-semibold',
   }[size];
 
-  const variantClasses: Record<BadgeVariant, { bg: string; dotColor: string }> = {
+  const variantClasses: Record<BadgeVariant, { bg: string; marker: string }> = {
     default: {
-      bg: 'bg-slate-800 text-slate-300 border border-slate-700/60',
-      dotColor: 'bg-slate-400',
+      bg: 'bg-[#EDE8DC] text-[#1B1A17] border border-[#B8B1A1]',
+      marker: '▪',
     },
     success: {
-      bg: 'bg-emerald-950/60 text-emerald-300 border border-emerald-800/50',
-      dotColor: 'bg-emerald-400',
+      bg: 'bg-[#E5EFEA] text-[#144836] border border-[#8EB8A6]',
+      marker: '✓',
     },
     warning: {
-      bg: 'bg-amber-950/60 text-amber-300 border border-amber-800/50',
-      dotColor: 'bg-amber-400',
+      bg: 'bg-[#FBF1DC] text-[#784300] border border-[#D9AD5B]',
+      marker: '△',
     },
     danger: {
-      bg: 'bg-rose-950/60 text-rose-300 border border-rose-800/50',
-      dotColor: 'bg-rose-400',
+      bg: 'bg-[#FAE6E6] text-[#911D1D] border border-[#D67A7A]',
+      marker: '✕',
     },
     info: {
-      bg: 'bg-blue-950/60 text-blue-300 border border-blue-800/50',
-      dotColor: 'bg-blue-400',
-    },
-    purple: {
-      bg: 'bg-purple-950/60 text-purple-300 border border-purple-800/50',
-      dotColor: 'bg-purple-400',
+      bg: 'bg-[#E5EDF4] text-[#164B78] border border-[#8FB0CC]',
+      marker: '◆',
     },
     outline: {
-      bg: 'bg-transparent text-slate-300 border border-slate-700',
-      dotColor: 'bg-slate-400',
+      bg: 'bg-[#FBF9F5] text-[#1B1A17] border border-[#D9D4C7]',
+      marker: '○',
     },
 
-    // Roster specific statuses
+    // Roster specific statuses (color + distinct shape marker)
     WORKING: {
-      bg: 'bg-indigo-950/70 text-indigo-300 border border-indigo-700/60 font-semibold',
-      dotColor: 'bg-indigo-400',
+      bg: 'bg-[#E5EFEA] text-[#144836] border border-[#8EB8A6] font-semibold',
+      marker: '✓',
     },
     WEEKLY_OFF: {
-      bg: 'bg-slate-800/80 text-slate-400 border border-slate-700/60 font-medium',
-      dotColor: 'bg-slate-500',
+      bg: 'bg-[#EDE8DC] text-[#57534A] border border-[#D9D4C7] font-medium',
+      marker: '—',
     },
     LEAVE: {
-      bg: 'bg-amber-950/70 text-amber-300 border border-amber-700/60 font-semibold',
-      dotColor: 'bg-amber-400',
+      bg: 'bg-[#FBF1DC] text-[#784300] border border-[#D9AD5B] font-semibold',
+      marker: '△',
     },
     HOLIDAY: {
-      bg: 'bg-teal-950/70 text-teal-300 border border-teal-700/60 font-semibold',
-      dotColor: 'bg-teal-400',
+      bg: 'bg-[#E5EDF4] text-[#164B78] border border-[#8FB0CC] font-semibold',
+      marker: '◇',
     },
     COMP_OFF: {
-      bg: 'bg-cyan-950/70 text-cyan-300 border border-cyan-700/60 font-semibold',
-      dotColor: 'bg-cyan-400',
+      bg: 'bg-[#E5EDF4] text-[#164B78] border border-[#8FB0CC] font-semibold',
+      marker: '◆',
     },
     UNAVAILABLE: {
-      bg: 'bg-rose-950/70 text-rose-300 border border-rose-700/60 font-semibold',
-      dotColor: 'bg-rose-400',
+      bg: 'bg-[#FAE6E6] text-[#911D1D] border border-[#D67A7A] font-semibold',
+      marker: '✕',
     },
 
     // Roster workflow statuses
     DRAFT: {
-      bg: 'bg-amber-950/60 text-amber-300 border border-amber-800/50',
-      dotColor: 'bg-amber-400',
+      bg: 'bg-[#FBF1DC] text-[#784300] border border-[#D9AD5B]',
+      marker: '○',
     },
     VALIDATED: {
-      bg: 'bg-blue-950/60 text-blue-300 border border-blue-800/50',
-      dotColor: 'bg-blue-400',
+      bg: 'bg-[#E5EDF4] text-[#164B78] border border-[#8FB0CC]',
+      marker: '◆',
     },
     PUBLISHED: {
-      bg: 'bg-emerald-950/60 text-emerald-300 border border-emerald-800/50',
-      dotColor: 'bg-emerald-400',
+      bg: 'bg-[#E5EFEA] text-[#144836] border border-[#8EB8A6]',
+      marker: '✓',
     },
 
     // Conflict severities
     CRITICAL: {
-      bg: 'bg-rose-950/70 text-rose-300 border border-rose-700/60 font-semibold',
-      dotColor: 'bg-rose-400 animate-pulse',
+      bg: 'bg-[#FAE6E6] text-[#911D1D] border border-[#D67A7A] font-semibold',
+      marker: '✕',
     },
     WARNING: {
-      bg: 'bg-amber-950/70 text-amber-300 border border-amber-700/60',
-      dotColor: 'bg-amber-400',
+      bg: 'bg-[#FBF1DC] text-[#784300] border border-[#D9AD5B]',
+      marker: '△',
     },
     INFO: {
-      bg: 'bg-sky-950/70 text-sky-300 border border-sky-700/60',
-      dotColor: 'bg-sky-400',
+      bg: 'bg-[#E5EDF4] text-[#164B78] border border-[#8FB0CC]',
+      marker: '◆',
     },
   };
 
@@ -131,9 +126,13 @@ export const Badge: React.FC<BadgeProps> = ({
 
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-md ${sizeClasses} ${current.bg} ${className}`}
+      className={`inline-flex items-center gap-1 rounded-[4px] tabular-nums ${sizeClasses} ${current.bg} ${className}`}
     >
-      {dot && <span className={`w-1.5 h-1.5 rounded-full ${current.dotColor}`} />}
+      {dot && (
+        <span aria-hidden="true" className="text-[10px] leading-none">
+          {current.marker}
+        </span>
+      )}
       {children}
     </span>
   );
