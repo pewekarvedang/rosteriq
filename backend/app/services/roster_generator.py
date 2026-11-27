@@ -1,3 +1,4 @@
+from __future__ import annotations
 import calendar
 from datetime import date, datetime, timedelta
 from typing import Dict, List, Optional, Any, Tuple
@@ -15,7 +16,7 @@ from app.models.process import Process
 from app.models.pod import Pod
 from app.models.shift import Shift
 
-from app.services.availability import load_employee_schedule_profiles
+from app.services.availability import load_employee_schedule_profiles, EmployeeScheduleProfile
 from app.services.coverage import load_brand_process_specs, evaluate_monthly_coverage_demands
 from app.services.optimization import OptimizationConfig
 from app.services.scheduler import WorkforceScheduler, ScheduleSolution
