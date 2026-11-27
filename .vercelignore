@@ -1,0 +1,8 @@
+# Prevent Vercel from treating backend Python scripts as serverless functions
+backend/
+docs/
+render.yaml
+*.py
+requirements.txt
+Procfile
+Dockerfile

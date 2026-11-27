@@ -1,0 +1,70 @@
+==============================================================================
+   RosterIQ - Smart Roster Management System
+   Quick Start & Installation Instructions
+==============================================================================
+
+REQUIREMENTS:
+- Python 3.10 or higher (Python 3.11 / 3.12 / 3.14 recommended)
+  Download from: https://www.python.org/downloads/
+  (Make sure to check "Add Python to PATH" during installation)
+
+NOTE: Node.js and npm are NOT required to run this application!
+The compiled production frontend is already bundled and served directly
+by the Python application server.
+
+------------------------------------------------------------------------------
+HOW TO RUN ON WINDOWS:
+------------------------------------------------------------------------------
+1. Extract this zip / open this folder.
+2. Double-click "RosterIQ.bat".
+   - It will automatically check and install Python dependencies.
+   - It will initialize and seed the database.
+   - It will launch the application in a standalone desktop app window!
+
+Alternative:
+- Double-click "RosterIQ-Desktop.vbs" to launch silently in the background.
+- Run "powershell -File create-desktop-shortcut.ps1" to put a shortcut on your Desktop.
+
+------------------------------------------------------------------------------
+HOW TO RUN ON macOS / LINUX:
+------------------------------------------------------------------------------
+1. Open Terminal in this folder.
+2. Make setup.sh executable and run it:
+   chmod +x setup.sh
+   ./setup.sh
+
+------------------------------------------------------------------------------
+MANUAL COMMAND-LINE LAUNCH (ALL OPERATING SYSTEMS):
+------------------------------------------------------------------------------
+1. Install dependencies:
+   pip install -r requirements.txt
+
+2. Seed the database with 35 employees, 20 brands, 5 pods:
+   cd backend
+   python seed.py
+
+3. Start the application:
+   python -m uvicorn app.main:app --host 127.0.0.1 --port 8000
+
+4. Open in any browser:
+   http://127.0.0.1:8000
+
+------------------------------------------------------------------------------
+ACCESS URLS:
+------------------------------------------------------------------------------
+- Main Application:   http://127.0.0.1:8000
+- API Documentation:  http://127.0.0.1:8000/docs
+- Health Check:       http://127.0.0.1:8000/health
+
+------------------------------------------------------------------------------
+RUNNING AUTOMATED TESTS (74 PASSING TESTS):
+------------------------------------------------------------------------------
+- Backend & Solver Tests (54 tests):
+  cd backend && pytest tests/ -v
+
+==============================================================================
+For full technical architecture and documentation, see:
+- README.md
+- docs/approach-note.md
+- docs/deployment-report.md
+==============================================================================
