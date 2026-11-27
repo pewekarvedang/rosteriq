@@ -108,6 +108,7 @@ app.include_router(api_router, prefix=settings.API_V1_PREFIX)
 
 
 @app.get("/health", tags=["Health & Meta"])
+@app.get(f"{settings.API_V1_PREFIX}/health", tags=["Health & Meta"])
 def health_check():
     db_ok = check_db_connection()
     return {
